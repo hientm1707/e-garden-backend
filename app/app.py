@@ -21,7 +21,7 @@ class Todo(db.Model):
         return '<Task %r' %self.id
 
 @app.route("/")
-def displayHomePage:
+def displayHomePage():
     return redirect('/index')
 
 
