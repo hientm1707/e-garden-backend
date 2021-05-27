@@ -22,7 +22,7 @@
 import json, requests
 
 # MQTT RC Error Types
-MQTT_ERRORS   = [ 'Connection successful',
+MQTT_ERRORS = [ 'Connection successful',
                   'Incorrect protocol version',
                   'Invalid Client ID',
                   'Server unavailable ',
