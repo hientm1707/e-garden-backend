@@ -1,11 +1,14 @@
-from flask import Flask, render_template, flash, request,g, url_for, session
+from flask import Flask, render_template, flash, request,g, url_for, session, jsonify, redirect
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
+import os
 from form import LoginForm
-from werkzeug.utils import redirect
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+app.config['SECRET_KEY'] = 'Thisissupposedtobesecret'
+app.secret_key = os.urandom(24)
 socketio = SocketIO(app)
 
 class User:
@@ -57,14 +60,23 @@ user = {"username":"trminhhien17"}
 
 
 
+@app.route('/register')
+def register():
+    return render_template('signup.html')
 
 
+@app.route('register',method = 'POST')
+def register_post():
+    username = request.form.get('username')
+    password = request.form.get('password')
+    email = request.form.get('email')
 
-
+    user = User.q
 
 @app.route("/")
 def displayHomePage():
     return redirect('/index')
+
 @app.route("/index")
 def displayIndexPage():
     # return render_template('index.html', title = "Home", user = user)
@@ -90,6 +102,7 @@ def login():
 
     if request.method == 'POST':
         session.pop('user_id',None)
+
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
