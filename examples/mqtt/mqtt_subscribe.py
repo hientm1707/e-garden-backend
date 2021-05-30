@@ -50,19 +50,19 @@ def message(client, feed_id, payload):
 
 
 # Create an MQTT client instance.
-client = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
+mqttclient = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
 
 # Setup the callback functions defined above.
-client.on_connect    = connected
-client.on_disconnect = disconnected
-client.on_message    = message
-client.on_subscribe  = subscribe
+mqttclient.on_connect    = connected
+mqttclient.on_disconnect = disconnected
+mqttclient.on_message    = message
+mqttclient.on_subscribe  = subscribe
 
 # Connect to the Adafruit IO server.
-client.connect()
+mqttclient.connect()
 
 # Start a message loop that blocks forever waiting for MQTT messages to be
 # received.  Note there are other options for running the event loop like doing
 # so in a background thread--see the mqtt_client.py example to learn more.
-client.loop_blocking()
+mqttclient.loop_blocking()
 #client.loop_background
