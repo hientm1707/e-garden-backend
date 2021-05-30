@@ -11,29 +11,31 @@ from Adafruit_IO import MQTTClient
 # Set to your Adafruit IO key.
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
-ADAFRUIT_IO_KEY = 'YOUR_AIO_KEY'
+ADAFRUIT_IO_KEY = 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 
 # Set to your Adafruit IO username.
 # (go to https://accounts.adafruit.com to find your username)
-ADAFRUIT_IO_USERNAME = 'YOUR_AIO_USERNAME'
+ADAFRUIT_IO_USERNAME = 'trminhhien17'
 
 # Set to the ID of the feed to subscribe to for updates.
-FEED_ID = 'DemoFeed'
+FEED1_ID = 'co2'
+FEED2_ID = 'humidity'
+FEED3_ID = 'temperature'
 
 
 # Define callback functions which will be called when certain events happen.
 def connected(client):
     # Connected function will be called when the client is connected to Adafruit IO.
     # This is a good place to subscribe to feed changes.  The client parameter
-    # passed to this function is the Adafruit IO MQTT client so you can make
-    # calls against it easily.
-    print('Connected to Adafruit IO!  Listening for {0} changes...'.format(FEED_ID))
+    ## passed to this function is the Adafruit IO MQTT client so you can make
+    ## calls against it easily.
+    print('Connected to Adafruit IO!  Listening for {0} changes...'.format(FEED1_ID))
     # Subscribe to changes on a feed named DemoFeed.
-    client.subscribe(FEED_ID)
+    client.subscribe(FEED1_ID)
 
 def subscribe(client, userdata, mid, granted_qos):
     # This method is called when the client subscribes to a new feed.
-    print('Subscribed to {0} with QoS {1}'.format(FEED_ID, granted_qos[0]))
+    print('Subscribed to {0} with QoS {1}'.format(FEED1_ID, granted_qos[0]))
 
 def disconnected(client):
     # Disconnected function will be called when the client disconnects.
@@ -63,3 +65,4 @@ client.connect()
 # received.  Note there are other options for running the event loop like doing
 # so in a background thread--see the mqtt_client.py example to learn more.
 client.loop_blocking()
+#client.loop_background

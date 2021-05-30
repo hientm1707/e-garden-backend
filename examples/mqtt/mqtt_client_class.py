@@ -12,11 +12,11 @@ from Adafruit_IO import MQTTClient
 # Set to your Adafruit IO key.
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
-ADAFRUIT_IO_KEY = 'YOUR_AIO_KEY'
+ADAFRUIT_IO_KEY = 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 
 # Set to your Adafruit IO username.
 # (go to https://accounts.adafruit.com to find your username)
-ADAFRUIT_IO_USERNAME = 'YOUR_AIO_USERNAME'
+ADAFRUIT_IO_USERNAME = 'trminhhien17'
 
 
 # Define callback functions which will be called when certain events happen.
