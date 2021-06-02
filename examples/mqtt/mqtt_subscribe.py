@@ -4,23 +4,41 @@
 
 # Import standard python modules.
 import sys
-
+import json
 # Import Adafruit IO MQTT client.
+
 from Adafruit_IO import MQTTClient
 
 # Set to your Adafruit IO key.
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
-ADAFRUIT_IO_KEY = 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
-
+ADAFRUIT_IO_KEY0 = 'aio_YWDB05IjL7N9cwPuBj4zR2VWh5st'
+ADAFRUIT_IO_KEY1 = 'aio_QNPJ394Jk08cpPS8NOymaXMfTjIh'
 # Set to your Adafruit IO username.
 # (go to https://accounts.adafruit.com to find your username)
-ADAFRUIT_IO_USERNAME = 'trminhhien17'
+ADAFRUIT_IO_USERNAME0 = 'CSE_BBC'
+ADAFRUIT_IO_USERNAME1 = 'CSE_BBC1'
+# Set to the ID of the feed to subs
+# cribe to for updates.
+LED_Feed = 'bk-iot-led' #pub #sub
+DHT11_Feed = 'bk-iot-temp-humid' #sub
 
-# Set to the ID of the feed to subscribe to for updates.
-FEED1_ID = 'co2'
-FEED2_ID = 'humidity'
-FEED3_ID = 'temperature'
+RTC_Feed = 'bk-iot-time' #sub
+LIGHT_Feed = 'bk-iot-light' #sub
+RELAY_Feed = 'bk-iot-relay' #SUB
+
+
+data_for_DHT11 = json.dumps('{"id":"7","name":"TEMP-HUMID","data":"X","unit": *C-%"}')
+
+data_for_RTC = json.dumps('{ "id" : "22","name" : "TIME","data": "x","unit":"}')
+#X = 0 tat , X = 1 mo
+data_for_RELAY = json.dumps('{"id":"11","name":"RELAY","data":"X","unit":””}')
+
+#INPUT:  X<100 toi, X>100 sang
+data_for_LIGHT =json.dumps('{"id":"13","name":"LIGHT","data":"X","unit":""}')
+
+#X = 0 – OFF, X = 1 – RED,X = 2 – BLUE
+data_for_LED =json.dumps('{"id":"1","name":"LED","data":"1","unit":""}')
 
 
 # Define callback functions which will be called when certain events happen.
@@ -29,13 +47,13 @@ def connected(client):
     # This is a good place to subscribe to feed changes.  The client parameter
     ## passed to this function is the Adafruit IO MQTT client so you can make
     ## calls against it easily.
-    print('Connected to Adafruit IO!  Listening for {0} changes...'.format(FEED1_ID))
+    print('Connected to Adafruit IO!  Listening for {0} changes...'.format(LED_Feed))
     # Subscribe to changes on a feed named DemoFeed.
-    client.subscribe(FEED1_ID)
+    client.subscribe(LED_Feed)
 
 def subscribe(client, userdata, mid, granted_qos):
     # This method is called when the client subscribes to a new feed.
-    print('Subscribed to {0} with QoS {1}'.format(FEED1_ID, granted_qos[0]))
+    print('Subscribed to {0} with QoS {1}'.format(LED_Feed, granted_qos[0]))
 
 def disconnected(client):
     # Disconnected function will be called when the client disconnects.
@@ -50,19 +68,31 @@ def message(client, feed_id, payload):
 
 
 # Create an MQTT client instance.
-mqttclient = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
+mqttclientLED = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEY0)
+#mqttclientLED2 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEY0)
+
+#qttclientDHT11 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEY0)
 
 # Setup the callback functions defined above.
-mqttclient.on_connect    = connected
-mqttclient.on_disconnect = disconnected
-mqttclient.on_message    = message
-mqttclient.on_subscribe  = subscribe
+mqttclientLED.on_connect    = connected
+mqttclientLED.on_disconnect = disconnected
+mqttclientLED.on_message    = message
+mqttclientLED.on_subscribe  = subscribe
+
+
+
+# mqttclientLED2.on_connect    = connected
+# mqttclientLED2.on_disconnect = disconnected
+# mqttclientLED2.on_message    = message
+# mqttclientLED2.on_subscribe  = subscribe
 
 # Connect to the Adafruit IO server.
-mqttclient.connect()
-
+mqttclientLED.connect()
+# mqttclientLED2.connect()
 # Start a message loop that blocks forever waiting for MQTT messages to be
 # received.  Note there are other options for running the event loop like doing
 # so in a background thread--see the mqtt_client.py example to learn more.
-mqttclient.loop_blocking()
+mqttclientLED.loop_background()
+# mqttclientLED2.loop_background()
 #client.loop_background
+
