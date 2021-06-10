@@ -76,8 +76,7 @@ def publish_data(topic_id, param):
         # mqttclient1.publish('CSE_BBC1/feeds/' + topic_name, param)
 
         print(f"Publishing {param} to {topic_name}")
-        
-    return {"status": "OK"}
+    return json.dumps('{"status": "OK"}')
     
 def receive_data():
     pass
