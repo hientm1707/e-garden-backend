@@ -1,24 +1,23 @@
 from flask import Flask, render_template, flash, request,g, url_for, session
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
-from form import LoginForm
+# from form import LoginForm
 from werkzeug.utils import redirect
-
+from process_data import publish_data
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 socketio = SocketIO(app)
-
 class User:
-    def __init__(self,id,username,password):
-        self._id = id
-        self._username = username
-        self._password = password
-        self._email = None
-    def __init__(self,id,username,password,email):
+    def __init__(self,id,username,password = None , email = None):
         self._id = id
         self._username = username
         self._password = password
         self._email = email
+    # def __init__(self,id,username,password,email):
+    #     self._id = id
+    #     self._username = username
+    #     self._password = password
+    #     self._email = email
 
     def __repr__(self):
         return f'Hello User: {self._username}'
@@ -34,7 +33,7 @@ userList.append(User('dinhhuy','dinhhuy'))
 
 
 db = SQLAlchemy(app)
-user = {"username":"trminhhien17"}
+user = {"username":"huydinh"}
 
 
 # class Todo(db.Model):
@@ -65,6 +64,7 @@ user = {"username":"trminhhien17"}
 @app.route("/")
 def displayHomePage():
     return redirect('/index')
+
 @app.route("/index")
 def displayIndexPage():
     # return render_template('index.html', title = "Home", user = user)
@@ -107,6 +107,13 @@ def profile():
         return redirect(url_for('login'))
 
     return render_template('profile.html')
+
+@app.route("/api/account/<username>/<topic_id>", methods=["POST"])
+def send_data(username, topic_id):
+    param = request.args.get("param")
+    if param:
+        return publish_data(topic_id, param)
+    return f"Couldn't work with param = {param}"
 
 
 @socketio.on('message')
