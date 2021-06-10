@@ -37,7 +37,7 @@ def createAccount():
         account = User.query.filter_by(username = uname, password =pword).first()
         if account:
             flash("Account already existed")
-            return json.dumps('{"status": "FAILED","msg":"Account already existed"')
+            return json.dumps('{"status": "true","msg":"Account already existed"')
         my_user = User(uname,pword)
         db.session.add(my_user)
         db.session.commit()
@@ -52,30 +52,30 @@ def login():
         pword = data['password']
         account = User.query.filter_by(username=uname, password=pword).first()
         if account:
-            db.session.configure('loggedin',True)
-            db.session.configure('id', account['id'])
-            db.session.configure('username', account['username'])
+            # db.session.configure('loggedin',True)
+            # db.session.configure('id', account['id'])
+            # db.session.configure('username', account['username'])
             # db.session['loggedin'] = True;
             # db.session['id'] = account['id']
             # db.session['username'] =account['username']
-            return json.dumps('{"status":"OK"}')
+            return json.dumps('{"status":"true"}')
         return json.dumps('{"status":"FAILED","msg":"Incorrect username/password')
 
 
-@app.route('/api/account/logout')
-def logout():
-    # Remove session data, this will log the user out
-   session.pop('loggedin', None)
-   session.pop('id', None)
-   session.pop('username', None)
-   return json.dumps('{"status":"OK"}')
+# @app.route('/api/account/logout')
+# def logout():
+#     # Remove session data, this will log the user out
+#    session.pop('loggedin', None)
+#    session.pop('id', None)
+#    session.pop('username', None)
+#    return json.dumps('{"status":"OK"}')
 
 @app.route('/index')
 def index():
     # Check if user is loggedin
     if 'loggedin' in session:
         # User is loggedin show them the home page
-        return json.dumps('{"status":"OK"}')
+        return json.dumps('{"status":"true"}')
     # User is not loggedin redirect to login page
     return json.dumps('{"msg":"Not authenticated"}')
 #
