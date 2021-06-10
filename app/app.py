@@ -1,6 +1,7 @@
 import json
-import MySQLdb
-from flask import Flask, render_template, flash, request,g, url_for, session, jsonify, redirect
+
+import login as login
+from flask import Flask, flash, request, session
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 
@@ -12,10 +13,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 socketio = SocketIO(app)
 
-
-# @login.user_loader
-# def load_user(id):
-#     return User.query.get(int(id))
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False,)
@@ -37,11 +34,11 @@ def createAccount():
         account = User.query.filter_by(username = uname, password =pword).first()
         if account:
             flash("Account already existed")
-            return json.dumps('{"status": "true","msg":"Account already existed"')
+            return json.dumps('{"status": "false","msg": "Account already existed"}')
         my_user = User(uname,pword)
         db.session.add(my_user)
         db.session.commit()
-        return json.dumps('{"status": "OK"}')
+        return json.dumps('{"status": "true"}')
 
 
 @app.route('/api/account/',methods = ['POST'])
