@@ -2,6 +2,7 @@ import sys
 import json
 import time
 import requests
+from http import HTTPStatus
 # Import Adafruit IO MQTT client.
 
 from Adafruit_IO import MQTTClient
@@ -9,10 +10,9 @@ from Adafruit_IO import MQTTClient
 # Set to your Adafruit IO key.
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
-a = requests.get('http://dadn.esp32thanhdanh.link/',params="keyBBC1")
+a = requests.get(url ='http://dadn.esp32thanhdanh.link/')
 
-
-ADAFRUIT_IO_KEYBBC0  = a.json().get("keyBBC")
+ADAFRUIT_IO_KEYBBC  = a.json().get("keyBBC")
 ADAFRUIT_IO_KEYBBC1  = a.json().get("keyBBC1")#'aio_sRyV27Jw7nbPzH7V8GaZ9lFlnK3Y'
 
 # Set to your Adafruit IO username.
@@ -74,7 +74,7 @@ def message(client, feed_id, payload):
 
 
 # Create an MQTT client instance.
-mqttclientLED = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+mqttclientLED = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC)
 #mqttclientLED2 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEY0)
 
 #qttclientDHT11 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEY0)
@@ -98,7 +98,7 @@ mqttclientLED.connect()
 # Start a message loop that blocks forever waiting for MQTT messages to be
 # received.  Note there are other options for running the event loop like doing
 # so in a background thread--see the mqtt_client.py example to learn more.
-mqttclientLED.loop_blocking()
+mqttclientLED.loop_background()
 while True:
     time.sleep(5)
     mqttclientLED.publish(TRAFFIC_LIGHTS_Feed,data_for_TFLIGHTS)

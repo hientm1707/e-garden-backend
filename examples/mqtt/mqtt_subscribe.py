@@ -5,6 +5,9 @@
 # Import standard python modules.
 import sys
 import json
+import time
+import random
+import requests
 # Import Adafruit IO MQTT client.
 
 from Adafruit_IO import MQTTClient
@@ -12,17 +15,17 @@ from Adafruit_IO import MQTTClient
 # Set to your Adafruit IO key.
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
-ADAFRUIT_IO_KEY0 = 'aio_YWDB05IjL7N9cwPuBj4zR2VWh5st'
-ADAFRUIT_IO_KEY1 = 'aio_QNPJ394Jk08cpPS8NOymaXMfTjIh'
+a = requests.get(url ='http://dadn.esp32thanhdanh.link/')
+ADAFRUIT_IO_KEYBBC  = a.json().get("keyBBC")
+ADAFRUIT_IO_KEYBBC1  = a.json().get("keyBBC1")
 # Set to your Adafruit IO username.
 # (go to https://accounts.adafruit.com to find your username)
-ADAFRUIT_IO_USERNAME0 = 'CSE_BBC'
+ADAFRUIT_IO_USERNAME = 'CSE_BBC'
 ADAFRUIT_IO_USERNAME1 = 'CSE_BBC1'
 # Set to the ID of the feed to subs
 # cribe to for updates.
 LED_Feed = 'bk-iot-led' #pub #sub
 DHT11_Feed = 'bk-iot-temp-humid' #sub
-
 RTC_Feed = 'bk-iot-time' #sub
 LIGHT_Feed = 'bk-iot-light' #sub
 RELAY_Feed = 'bk-iot-relay' #SUB
@@ -68,7 +71,7 @@ def message(client, feed_id, payload):
 
 
 # Create an MQTT client instance.
-mqttclientLED = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEY0)
+mqttclientLED = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
 #mqttclientLED2 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEY0)
 
 #qttclientDHT11 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEY0)
@@ -93,6 +96,10 @@ mqttclientLED.connect()
 # received.  Note there are other options for running the event loop like doing
 # so in a background thread--see the mqtt_client.py example to learn more.
 mqttclientLED.loop_background()
+print('Publishing a new message every 10 seconds (press Ctrl-C to quit)...')
+while True:
+    value = random.randint(0, 100);
+    time.sleep(10);
 # mqttclientLED2.loop_background()
 #client.loop_background
 
