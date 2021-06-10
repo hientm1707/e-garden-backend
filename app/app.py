@@ -1,123 +1,90 @@
-from flask import Flask, render_template, flash, request,g, url_for, session
+import json
+
+import login as login
+from flask import Flask, flash, request, session
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
-from form import LoginForm
-from werkzeug.utils import redirect
 
+'''Setups'''
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+app.secret_key ="Secret Key"
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql://root:minhhien37@localhost/crud"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 socketio = SocketIO(app)
 
-class User:
-    def __init__(self,id,username,password):
-        self._id = id
-        self._username = username
-        self._password = password
-        self._email = None
-    def __init__(self,id,username,password,email):
-        self._id = id
-        self._username = username
-        self._password = password
-        self._email = email
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False,)
+    password = db.Column(db.String(120), unique=True, nullable=False)
 
+    def __init__(self,username,password):
+        self.username = username
+        self.password =password
     def __repr__(self):
-        return f'Hello User: {self._username}'
+        return '<User %r>' % self.username
 
 
-userList = []
-userList.append(User('trminhhien17','trminhhien17','minhhien1772000@gmail.com'))
-userList.append(User('notm16','notm16','minhtri2000@gmail.com'))
-userList.append(User('dinhhuy','dinhhuy'))
-
-
-
-
-
-db = SQLAlchemy(app)
-user = {"username":"trminhhien17"}
-
-
-# class Todo(db.Model):
-#     id = db.Column(db.Integer, primary_key = True)
-#     content = db.Column(db.String(200),nullable =False)
-#     completed = db.Column(db.Integer,default = 0)
-#     date_created = db.Column(db.DateTime, default = datetime.utcnow)
-#
-#     def __repr__(self):
-#         return '<Task %r' %self.id
-#
-# class User(db.Model):
-#
-#     id = db.Column(db.Integer, primary_key=True)
-#     username = db.Column(db.String(80), unique=True, nullable=False)
-#     email = db.Column(db.String(120), unique=True, nullable=False)
-#
-#     def __repr__(self):
-#         return '<User %r>' % self.username
-
-
-
-
-
-
-
-
-@app.route("/")
-def displayHomePage():
-    return redirect('/index')
-@app.route("/index")
-def displayIndexPage():
-    # return render_template('index.html', title = "Home", user = user)
-    return render_template("index.html",title = "Home page", user =user)
-
-# @app.route("/login", methods = ['GET','POST'])
-# def login():
-#     form = LoginForm()
-#     if form.validate_on_submit():
-#         flash('Login requested for OpenID="' + form.openid.data + '", remember_me=' + str(form.remember_me.data));
-#         return redirect('/index')
-
-@app.before_request
-def before_request():
-    g.user = None
-
-    if 'user_id' in session:
-        user = [x for x in userList if x._id == session['user_id']][0]
-        g.user = user
-
-@app.route('/login',methods = ['GET','POST'])
-def login():
-
+@app.route('/api/account/create', methods = ['POST'])
+def createAccount():
     if request.method == 'POST':
-        session.pop('user_id',None)
-        username = request.form['username']
-        password = request.form['password']
-        email = request.form['email']
-        user = [x for x in userList if x._username == username][0]
-        if user and user._password == password:
-            session['user_id'] = user._id
-            return redirect(url_for('profile'))
-        return redirect(url_for('login'))
-    return render_template('login.html')
+        data = request.get_json()
+        uname = data['username']
+        pword = data['password']
+        account = User.query.filter_by(username = uname, password =pword).first()
+        if account:
+            flash("Account already existed")
+            return json.dumps('{"status": "false","msg": "Account already existed"}')
+        my_user = User(uname,pword)
+        db.session.add(my_user)
+        db.session.commit()
+        return json.dumps('{"status": "true"}')
 
 
-@app.route('/profile')
-def profile():
-    if not g.user:
-        return redirect(url_for('login'))
+@app.route('/api/account/',methods = ['POST'])
+def login():
+    if request.method == 'POST':
+        data = request.get_json()
+        uname = data['username']
+        pword = data['password']
+        account = User.query.filter_by(username=uname, password=pword).first()
+        if account:
+            # db.session.configure('loggedin',True)
+            # db.session.configure('id', account['id'])
+            # db.session.configure('username', account['username'])
+            # db.session['loggedin'] = True;
+            # db.session['id'] = account['id']
+            # db.session['username'] =account['username']
+            return json.dumps('{"status":"true"}')
+        return json.dumps('{"status":"FAILED","msg":"Incorrect username/password')
 
-    return render_template('profile.html')
 
+# @app.route('/api/account/logout')
+# def logout():
+#     # Remove session data, this will log the user out
+#    session.pop('loggedin', None)
+#    session.pop('id', None)
+#    session.pop('username', None)
+#    return json.dumps('{"status":"OK"}')
 
-@socketio.on('message')
+@app.route('/index')
+def index():
+    # Check if user is loggedin
+    if 'loggedin' in session:
+        # User is loggedin show them the home page
+        return json.dumps('{"status":"true"}')
+    # User is not loggedin redirect to login page
+    return json.dumps('{"msg":"Not authenticated"}')
+#
+@socketio.on('incoming_message')
 def handle_message(data):
     print('received message: ' + data)
 
 @socketio.on('json')
 def handle_json(json):
     print('received json: ' + str(json))
-
-
+#
 
 if __name__ == "__main__":
     app.run(debug=True)
+    ##
