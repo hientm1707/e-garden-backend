@@ -8,7 +8,6 @@ beautifulsoup4==4.9.3
 bidict==0.21.2
 boto3==1.17.60
 botocore==1.20.60
-Brlapi==0.8.2
 bytearray1==0.2
 capstone==4.0.2
 catfish==4.16.0
