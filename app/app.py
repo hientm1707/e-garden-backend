@@ -110,10 +110,12 @@ def profile():
 
 @app.route("/api/account/<username>/<topic_id>", methods=["POST"])
 def send_data(username, topic_id):
-    param = request.args.get("param")
-    if param:
-        return publish_data(topic_id, param)
-    return f"Couldn't work with param = {param}"
+    data = request.get_json()
+    value = data['value']
+    # param = request.args.get("param")
+    if value:
+        return publish_data(topic_id, value)
+    return f"Couldn't work with param = {value}"
 
 
 @socketio.on('message')
