@@ -3,7 +3,7 @@ from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 # from form import LoginForm
 from werkzeug.utils import redirect
-from process_data import publish_data
+from process_data import publish_data, receive_7_data
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 socketio = SocketIO(app)
@@ -114,8 +114,13 @@ def send_data(username, topic_id):
     value = data['value']
     # param = request.args.get("param")
     if value:
-        return publish_data(topic_id, value)
+        return publish_data(username, topic_id, value)
     return f"Couldn't work with param = {value}"
+
+@app.route("/api/account/<username>/<topic_id>/data", methods=["GET"])
+def get_7_data(username, topic_id):
+    
+    return receive_7_data(username,topic_id)
 
 
 @socketio.on('message')
