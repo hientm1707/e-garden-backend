@@ -5,14 +5,12 @@ attrs==20.3.0
 bcrypt==3.2.0
 beautifulsoup4==4.9.3
 bidict==0.21.2
-binwalk==2.2.0
 boto3==1.17.60
 botocore==1.20.60
 Brlapi==0.8.2
 bytearray1==0.2
 capstone==4.0.2
 catfish==4.16.0
-certbot==1.12.0
 certifi==2020.12.5
 cffi==1.14.4
 chardet==3.0.4
@@ -23,8 +21,6 @@ Colr==0.9.1
 conda==4.3.16
 ConfigArgParse==1.2.3
 configobj==5.0.6
-crypto==1.4.1
-cryptography==3.3.2
 cycler==0.10.0
 dbus-python==1.2.16
 debtags==2.1
