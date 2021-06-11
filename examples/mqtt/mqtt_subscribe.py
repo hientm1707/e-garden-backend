@@ -92,9 +92,6 @@ mqttclientLED.on_subscribe  = subscribe
 # Connect to the Adafruit IO server.
 mqttclientLED.connect()
 # mqttclientLED2.connect()
-# Start a message loop that blocks forever waiting for MQTT messages to be
-# received.  Note there are other options for running the event loop like doing
-# so in a background thread--see the mqtt_client.py example to learn more.
 mqttclientLED.loop_background()
 print('Publishing a new message every 10 seconds (press Ctrl-C to quit)...')
 while True:
