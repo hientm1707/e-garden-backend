@@ -7,6 +7,4 @@ Flask==1.1.2
 Flask_SocketIO==5.1.0
 Adafruit_IO==2.5.0
 flask_login==0.5.0
-paho_mqtt==1.5.1
 PyYAML==5.4.1
-
