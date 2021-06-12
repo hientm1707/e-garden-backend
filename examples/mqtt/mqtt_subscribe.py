@@ -16,12 +16,14 @@ from Adafruit_IO import MQTTClient
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
 a = requests.get(url ='http://dadn.esp32thanhdanh.link/')
-ADAFRUIT_IO_KEYBBC  = a.json().get("keyBBC")
-ADAFRUIT_IO_KEYBBC1  = a.json().get("keyBBC1")
+# ADAFRUIT_IO_KEYBBC  = a.json().get("keyBBC")
+# ADAFRUIT_IO_KEYBBC1  = a.json().get("keyBBC1")
 # Set to your Adafruit IO username.
 # (go to https://accounts.adafruit.com to find your username)
-ADAFRUIT_IO_USERNAME = 'CSE_BBC'
-ADAFRUIT_IO_USERNAME1 = 'CSE_BBC1'
+# ADAFRUIT_IO_USERNAME = 'CSE_BBC'
+# ADAFRUIT_IO_USERNAME1 = 'CSE_BBC1'
+ADAFRUIT_IO_USERNAME = 'trminhhien17'
+ADAFRUIT_IO_KEYBBC = 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 # Set to the ID of the feed to subs
 # cribe to for updates.
 LED_Feed = 'bk-iot-led' #pub #sub
@@ -93,10 +95,10 @@ mqttclientLED.on_subscribe  = subscribe
 mqttclientLED.connect()
 # mqttclientLED2.connect()
 mqttclientLED.loop_background()
-print('Publishing a new message every 10 seconds (press Ctrl-C to quit)...')
-while True:
-    value = random.randint(0, 100);
-    time.sleep(10);
+# print('Publishing a new message every 10 seconds (press Ctrl-C to quit)...')
+# while True:
+#     value = random.randint(0, 100);
+#     time.sleep(10);
 # mqttclientLED2.loop_background()
 #client.loop_background
 
