@@ -1,13 +1,8 @@
-# Example of using the MQTT client class to subscribe to a feed and print out
-# any changes made to the feed.  Edit the variables below to configure the key,
-# username, and feed to subscribe to for changes.
-
-# Import standard python modules.
 import sys
 import json
 import time
-import random
 import requests
+from http import HTTPStatus
 # Import Adafruit IO MQTT client.
 
 from Adafruit_IO import MQTTClient
@@ -16,20 +11,27 @@ from Adafruit_IO import MQTTClient
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
 a = requests.get(url ='http://dadn.esp32thanhdanh.link/')
+
 ADAFRUIT_IO_KEYBBC  = a.json().get("keyBBC")
-ADAFRUIT_IO_KEYBBC1  = a.json().get("keyBBC1")
+ADAFRUIT_IO_KEYBBC1  = a.json().get("keyBBC1")#'aio_sRyV27Jw7nbPzH7V8GaZ9lFlnK3Y'
+
 # Set to your Adafruit IO username.
 # (go to https://accounts.adafruit.com to find your username)
-ADAFRUIT_IO_USERNAME = 'CSE_BBC'
+ADAFRUIT_IO_USERNAME0 = 'CSE_BBC'
 ADAFRUIT_IO_USERNAME1 = 'CSE_BBC1'
 # Set to the ID of the feed to subs
 # cribe to for updates.
 LED_Feed = 'bk-iot-led' #pub #sub
 DHT11_Feed = 'bk-iot-temp-humid' #sub
+LCD_Feed = 'CSE_BBC/feeds/bk-iot-lcd'
+
 RTC_Feed = 'bk-iot-time' #sub
 LIGHT_Feed = 'bk-iot-light' #sub
 RELAY_Feed = 'bk-iot-relay' #SUB
+TRAFFIC_LIGHTS_Feed =  'CSE_BBC/feeds/bk-iot-traffic'
 
+data_for_TFLIGHTS=json.dumps('{"id":”6”,"name":"TRAFFIC","data":"00","unit":""}')
+#00=off 01=green 11=yellow 10=red
 
 data_for_DHT11 = json.dumps('{"id":"7","name":"TEMP-HUMID","data":"X","unit": *C-%"}')
 
@@ -43,6 +45,7 @@ data_for_LIGHT =json.dumps('{"id":"13","name":"LIGHT","data":"X","unit":""}')
 #X = 0 – OFF, X = 1 – RED,X = 2 – BLUE
 data_for_LED =json.dumps('{"id":"1","name":"LED","data":"1","unit":""}')
 
+data_for_LCD =json.dumps('{"id":"3","name":"LCD","data":"X","unit":""}')
 
 # Define callback functions which will be called when certain events happen.
 def connected(client):
@@ -50,13 +53,13 @@ def connected(client):
     # This is a good place to subscribe to feed changes.  The client parameter
     ## passed to this function is the Adafruit IO MQTT client so you can make
     ## calls against it easily.
-    print('Connected to Adafruit IO!  Listening for {0} changes...'.format(LED_Feed))
+    print('Connected to Adafruit IO!  Listening for {0} changes...'.format(TRAFFIC_LIGHTS_Feed))
     # Subscribe to changes on a feed named DemoFeed.
-    client.subscribe(LED_Feed)
+    client.subscribe(TRAFFIC_LIGHTS_Feed)
 
 def subscribe(client, userdata, mid, granted_qos):
     # This method is called when the client subscribes to a new feed.
-    print('Subscribed to {0} with QoS {1}'.format(LED_Feed, granted_qos[0]))
+    print('Subscribed to {0} with QoS {1}'.format(TRAFFIC_LIGHTS_Feed, granted_qos[0]))
 
 def disconnected(client):
     # Disconnected function will be called when the client disconnects.
@@ -71,7 +74,7 @@ def message(client, feed_id, payload):
 
 
 # Create an MQTT client instance.
-mqttclientLED = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
+mqttclientLED = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC)
 #mqttclientLED2 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEY0)
 
 #qttclientDHT11 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEY0)
@@ -92,11 +95,12 @@ mqttclientLED.on_subscribe  = subscribe
 # Connect to the Adafruit IO server.
 mqttclientLED.connect()
 # mqttclientLED2.connect()
+# Start a message loop that blocks forever waiting for MQTT messages to be
+# received.  Note there are other options for running the event loop like doing
+# so in a background thread--see the mqtt_client.py example to learn more.
 mqttclientLED.loop_background()
-print('Publishing a new message every 10 seconds (press Ctrl-C to quit)...')
 while True:
-    value = random.randint(0, 100);
-    time.sleep(10);
-# mqttclientLED2.loop_background()
-#client.loop_background
+    time.sleep(5)
+    mqttclientLED.publish(TRAFFIC_LIGHTS_Feed,data_for_TFLIGHTS)
+
 
