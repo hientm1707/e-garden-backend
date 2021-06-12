@@ -34,7 +34,6 @@ class User(db.Model):
 
 
 
-
 @app.route('/api/account/register', methods = ['POST'])
 def register():
     if request.method == 'POST':
@@ -170,7 +169,7 @@ def getSevenNearestValue(username,feed_id):
 #     return json.dumps('{"msg":"Not authenticated"}')
 #
 
-from examples.mqtt.mqtt_subscribe import *
+
 @socketio.on('incoming_message')
 def handle_message(data):
     print('received message: ' + data)
@@ -179,6 +178,7 @@ def handle_message(data):
 def handle_json(json):
     print('received json: ' + str(json))
 #
+from examples.mqtt.mqtt_subscribe import *
 
 if __name__ == "__main__":
     app.run(debug=True)
