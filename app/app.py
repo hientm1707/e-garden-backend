@@ -168,7 +168,9 @@ def getSevenNearestValue(username,feed_id):
 #     # User is not loggedin redirect to login page
 #     return json.dumps('{"msg":"Not authenticated"}')
 #
-
+@app.route('/', methods = ['GET'])
+def homepage():
+    return '<p> ok </p>'
 
 @socketio.on('incoming_message')
 def handle_message(data):
