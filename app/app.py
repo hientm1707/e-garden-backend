@@ -1,7 +1,8 @@
 import json
-
+import yaml
 import requests
-
+with open("db.yaml", "r") as ymlfile:
+    configuration = yaml.load(ymlfile)
 from Adafruit_IO import MQTTClient, Client, RequestError
 import login as login
 from flask import Flask, flash, request, session
@@ -11,18 +12,18 @@ from flask_sqlalchemy import SQLAlchemy
 '''Setups'''
 app = Flask(__name__)
 app.secret_key ="Secret Key"
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql://root:minhhien37@localhost/crud"
+app.config['SQLALCHEMY_DATABASE_URI'] = configuration['mysql_uri']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 socketio = SocketIO(app)
 
-a = requests.get(url ='http://dadn.esp32thanhdanh.link/')
-ADAFRUIT_IO_KEYBBC  = a.json().get("keyBBC")
-ADAFRUIT_IO_KEYBBC1  = a.json().get("keyBBC1")
-# Set to your Adafruit IO username.
-# (go to https://accounts.adafruit.com to find your username)
-ADAFRUIT_IO_USERNAME = 'CSE_BBC'
-ADAFRUIT_IO_USERNAME1 = 'CSE_BBC1'
+# a = requests.get(url ='http://dadn.esp32thanhdanh.link/')
+# ADAFRUIT_IO_KEYBBC  = a.json().get("keyBBC")
+# ADAFRUIT_IO_KEYBBC1  = a.json().get("keyBBC1")
+# ADAFRUIT_IO_USERNAME = 'CSE_BBC'
+# ADAFRUIT_IO_USERNAME1 = 'CSE_BBC1'
+ADAFRUIT_IO_USERNAME = 'trminhhien17'
+ADAFRUIT_IO_KEYBBC = 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 
 
 class User(db.Model):
@@ -38,7 +39,7 @@ class User(db.Model):
 
 
 @app.route('/api/account/register', methods = ['POST'])
-def createAccount():
+def register():
     if request.method == 'POST':
         data = request.get_json()
         uname = data['username']
@@ -46,11 +47,11 @@ def createAccount():
         account = User.query.filter_by(username = uname, password =pword).first()
         if account:
             flash("Account already existed")
-            return json.dumps('{"status": "false","msg": "Account already existed"}')
+            return json.dumps({"status": "false","msg": "Account already existed"})
         my_user = User(uname,pword)
         db.session.add(my_user)
         db.session.commit()
-        return json.dumps('{"status": "true"}')
+        return json.dumps({"status": "true"})
 
 
 @app.route('/api/account/',methods = ['POST'])
@@ -67,8 +68,8 @@ def login():
             # db.session['loggedin'] = True;
             # db.session['id'] = account['id']
             # db.session['username'] =account['username']
-            return json.dumps('{"status":"true"}')
-        return json.dumps('{"status":"FAILED","msg":"Incorrect username/password')
+            return json.dumps({"status":"true"})
+        return json.dumps({"status":"FAILED","msg":"Incorrect username/password"})
 
 @app.route('/api/account/logout')
 def logout():
@@ -76,7 +77,7 @@ def logout():
    session.pop('loggedin', None)
    session.pop('id', None)
    session.pop('username', None)
-   return json.dumps('{"status":"OK"}')
+   return json.dumps({"status":"OK"})
 
 @app.route('/api/account/minhhientran/add',methods=['POST'])
 def subscribeToFeed():
@@ -87,23 +88,24 @@ def subscribeToFeed():
 
 
 
-# @app.route('/api/account/<username>/<feed_id>/data', methods = ['POST'])
-# def getSevenNearestValue(username,feed_id):
-#     restClient = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
-#     try:
-#         temperature = restClient.feeds(feed_id)
-#     except RequestError:
-#         return json.dumps('{"status":"false","msg":"Invalid feed_id"}')
-#     listCreatedAt = [x.created_at for x in restClient.data('co2')[-7:]]
-#     listValue= [x.value for x in restClient.data('co2')[-7:]]
-#     listOfDicts = []
-#     for i in range(7):
-#         dict = {}
-#         dict['create_at'] = listCreatedAt[i]
-#         dict['value'] = listValue[i]
-#         listOfDicts.append(dict)
-#     object
-#     return json.dumps(listOfDicts)
+@app.route('/api/account/<username>/<feed_id>/data', methods = ['GET'])
+def getSevenNearestValue(username,feed_id):
+    restClient = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
+    try:
+        temperature = restClient.feeds(feed_id)
+    except RequestError:
+        return json.dumps('{"status":"false","msg": "Feed not found on {username}"'.format(username = username))
+    listCreatedAt = [x.created_at for x in restClient.data('co2')[-7:]]
+    listValue= [x.value for x in restClient.data('co2')[-7:]]
+    listOfDicts = []
+    for i in range(7):
+        dict = {}
+        dict['create_at'] = listCreatedAt[i]
+        dict['value'] = listValue[i]
+        listOfDicts.append(dict)
+    response = {}
+    response['data'] = listOfDicts
+    return json.dumps(response)
 
 
 
