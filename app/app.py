@@ -1,10 +1,7 @@
-import json
 import yaml
-import requests
 with open("db.yaml", "r") as ymlfile:
     configuration = yaml.load(ymlfile,Loader=yaml.FullLoader)
 from Adafruit_IO import MQTTClient, Client, RequestError
-import login as login
 from flask import Flask, flash, request, session,jsonify,make_response
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
@@ -16,14 +13,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = configuration['mysql_uri']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 socketio = SocketIO(app)
-
 # a = requests.get(url ='http://dadn.esp32thanhdanh.link/')
 # ADAFRUIT_IO_KEYBBC  = a.json().get("keyBBC")
 # ADAFRUIT_IO_KEYBBC1  = a.json().get("keyBBC1")
 # ADAFRUIT_IO_USERNAME = 'CSE_BBC'
 # ADAFRUIT_IO_USERNAME1 = 'CSE_BBC1'
-ADAFRUIT_IO_USERNAME = 'trminhhien17'
-ADAFRUIT_IO_KEYBBC = 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
+
 
 
 class User(db.Model):
@@ -36,6 +31,8 @@ class User(db.Model):
         self.password =password
     def __repr__(self):
         return '<User %r>' % self.username
+
+
 
 
 @app.route('/api/account/register', methods = ['POST'])
@@ -172,6 +169,8 @@ def getSevenNearestValue(username,feed_id):
 #     # User is not loggedin redirect to login page
 #     return json.dumps('{"msg":"Not authenticated"}')
 #
+
+from examples.mqtt.mqtt_subscribe import *
 @socketio.on('incoming_message')
 def handle_message(data):
     print('received message: ' + data)
