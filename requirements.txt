@@ -15,3 +15,4 @@ login==0.0.6
 flask_login==0.5.0
 paho_mqtt==1.5.1
 PyYAML==5.4.1
+gunicorn==19.9.0
