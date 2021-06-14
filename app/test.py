@@ -65,9 +65,7 @@ def connected(client):
     print('Connected to Adafruit IO! Listening for changes on feeds...')
 def subscribe(client, userdata, mid, granted_qos):
     # This method is called when the client subscribes to a new feed.
-
     print('Subscribed to  feed with QoS {0}'.format(granted_qos[0]))
-
 
 def disconnected(client):
     # Disconnected function will be called when the client disconnects.
