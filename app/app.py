@@ -1,3 +1,12 @@
+#-----------------------FEED_ID------------------------
+class FEED_ID:
+    LED_FEED = 'bk-iot-led'
+    SOIL_FEED = 'bk-iot-soil'
+    LIGHT_FEED = 'bk-iot-light'
+    LCD_FEED = 'bk-iot-lcd'
+    RELAY_FEED = 'bk-iot-relay'
+    DHT11_FEED =  'bk-iot-temp-humid'
+#----------------------Base setup-----------------------
 from Adafruit_IO import Client, RequestError
 from flask import Flask, request, jsonify, request, session, redirect, make_response
 import yaml
@@ -5,10 +14,10 @@ from mqtt_setup import *
 with open("db.yaml", "r") as ymlfile:
     configuration = yaml.load(ymlfile,Loader=yaml.FullLoader)
 from pymongo import MongoClient
+# -----------------------Warning rate------------------------
+warningRates = {'temp_rate' : 40, 'humidity_rate': 65}
 
-
-
-# --------------------- MQTT Setups----------
+# --------------------- MQTT Setups--------------------------
 import sys
 ADAFRUIT_IO_USERNAME = 'trminhhien17'
 ADAFRUIT_IO_KEYBBC = 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
@@ -61,6 +70,17 @@ def message(client, feed_id, payload):
     # The feed_id parameter identifies the feed, and the payload parameter has
     # the new value.
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
+
+def wake_up_MQTT():
+    # mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME2,ADAFRUIT_IO_KEYBBC1)
+    # Setup the callback functions defined above.
+    mqttClient.on_connect = connected
+    mqttClient.on_disconnect = disconnected
+    mqttClient.on_message = message
+    mqttClient.on_subscribe = subscribe
+    mqttClient.connect()
+    mqttClient.loop_background()
+
 #-----------------------------
 
 #tls=True,tlsCRLFile=configuration['tlsPath']
@@ -69,13 +89,7 @@ db = mgClient.get_database('DoAnDaNganh')
 app = Flask(__name__)
 app.secret_key ="Secret Key"
 
-# app.config['MONGODB_SETTINGS'] = {
-#     "db" : "doandanganh",
-#     "host" : "localhost",
-#     "port":27017
-# }
-
-
+mqttClient = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
 
 from passlib.hash import pbkdf2_sha256
 import uuid
@@ -84,18 +98,8 @@ class User:
         del user['password']
         session['logged_in'] = True
         session['user'] = user
-
         # Create an MQTT client instance.
-        mqttClient = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
-        # mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME2,ADAFRUIT_IO_KEYBBC1)
-        # Setup the callback functions defined above.
-        mqttClient.on_connect = connected
-        mqttClient.on_disconnect = disconnected
-        mqttClient.on_message = message
-        mqttClient.on_subscribe = subscribe
-
-        mqttClient.connect()
-        mqttClient.loop_background()
+        wake_up_MQTT()
         return jsonify({"status":"true"}), 200
 
     def signup(self):
@@ -132,6 +136,15 @@ class User:
             return self.start_session(user)
 
         return jsonify({"error": "Invalid login Username or password"}), 401
+
+    @staticmethod
+    def publishToFeed(topic_id):
+        if (session['logged_in'] == True):
+            value = request.get_json()['value']
+            mqttClient.publish(topic_id,value)
+            return jsonify({"status":"true"})
+        return jsonify({"error": "Not logged in"})
+
 @app.route('/', methods = ['GET'])
 def homepage():
     return '<p> ok </p>'
@@ -143,12 +156,12 @@ def register():
 def login():
     return User().login()
 
-@app.route('/api/account/logout')
+@app.route('/api/account/logout',methods =['POST'])
 def logout():
     return User().signout()
 
 @app.route('/api/account/<feed_id>/data', methods = ['GET'])
-def getSevenNearestValue(username,feed_id):
+def getSevenNearestValue(feed_id):
     restClient = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
     try:
         temperature = restClient.feeds(feed_id)
@@ -188,6 +201,51 @@ def getSevenNearestValue(username,feed_id):
         )
     trueResponse.headers["Content-Type"] = "application/json"
     return trueResponse
+@app.route('/api/account/data',methods = ['GET'])
+def getAllSensorsLatestData():
+    restClient = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
+    feeds = restClient.feeds()
+    data = [{feed.key: restClient.receive(feed.key)[3]} for feed in feeds]
+    return jsonify({"status":"true","data": data}),200
+
+
+
+
+
+@app.route('/api/account/<topic_id>', methods=['POST'])
+def publishToFeed(topic_id):
+    return User.publishToFeed(topic_id)
+
+
+@app.route('/api/account/humidity_warning', methods=['GET', 'PUT'])
+def modifyHumidityRate():
+    if request.method == 'PUT':
+        value = request.get_json()['value']
+        if not value:
+            return jsonify({"status": "false", "msg": "Invalid body format"}), 400
+        if isinstance(value, int):
+            warningRates['humidity_rate'] = value
+            return jsonify({"status": "true"}), 200
+        return jsonify({"error": "Invalid input format"}), 400
+
+    else:
+        return jsonify(warningRates['humidity_rate'])
+
+@app.route('/api/account/temp_warning', methods = ['GET','PUT'])
+def modifyTempRate():
+    if request.method == 'PUT':
+        value = request.get_json()['value']
+        if not value:
+            return jsonify({"status":"false","msg":"Invalid body format"}),400
+        if isinstance(value,int):
+            warningRates['temp_rate'] = value
+            return jsonify({"status":"true"}),200
+        return jsonify({"error":"Invalid input format"}),400
+
+    else:
+        return jsonify(warningRates['temp_rate'])
+
+
 
 
 # @socketio.on('incoming_message')
