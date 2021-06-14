@@ -109,13 +109,13 @@ def profile():
 
     return render_template('profile.html')
 
-@app.route("/api/account/<username>/<topic_id>", methods=["POST"])
-def send_data(username, topic_id):
+@app.route("/api/account/<topic_id>", methods=["POST"])
+def send_data(topic_id):
     data = request.get_json()
     value = data['value']
     # param = request.args.get("param")
     if value:
-        return publish_data(username, topic_id, value)
+        return publish_data(topic_id, value)
     return f"Couldn't work with param = {value}"
 
 @app.route("/api/account/data", methods=["GET"])

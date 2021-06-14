@@ -83,7 +83,7 @@ mqttclient0.loop_background()
 # mqttclient1.loop_background()
 
 
-def publish_data(username,topic_id, param):
+def publish_data(topic_id, param):
     # topic_id : bk-iot-led
     # topic_name = topic_id.split('/')[-1]  
 
