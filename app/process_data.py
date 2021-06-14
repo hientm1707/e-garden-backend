@@ -16,21 +16,18 @@ ADAFRUIT_IO_USERNAME1 = 'CSE_BBC1'
 ADAFRUIT_IO_KEYBBC0 = key_json.json().get("keyBBC")
 ADAFRUIT_IO_KEYBBC1 = key_json.json().get("keyBBC1")
 
+global_data = {}
 topics_id = ['bk-iot-led', 'bk-iot-soil', 'bk-iot-light', 'bk-iot-lcd', 'bk-iot-relay', 'bk-iot-temp-humid']
 topics_pub = ['bk-iot-led', 'bk-iot-lcd', 'bk-iot-relay']
 
-global_data = {}
 
 ## TEST
-# topics_id = ['bbc-led','test','bk-iot-led']
+topics_id = ['bbc-led','test','bk-iot-led']
 test_feed = 'bbc-led'
 # Define callback functions which will be called when certain events happen.
 def connected(client):
   
-    # print('Connected to Adafruit IO!  Listening for {0} changes...'.format(test_feed))
-    # # Subscribe to changes on a feed named DemoFeed.
-    # client.subscribe(test_feed) # only feed key
-
+   
     # APP 
     for topic in topics_id: # sub all
         print('Listening for {0} changes...'.format(topic))
@@ -49,7 +46,7 @@ def message(client, feed_id, payload):
     # Message function will be called when a subscribed feed has a new value.
     # The feed_id parameter identifies the feed, and the payload parameter has
     # the new value.
-    print('Feed {0} received new value: {1}'.format(test_feed, payload))
+    print('Feed {0} received new value: {1}'.format(feed_id, payload))
     global global_data
     try:
         global_data[feed_id] += [payload]
@@ -98,9 +95,9 @@ def publish_data(topic_id, param):
         mqttclient1.publish(topic_id, param)
         print(f"Publishing {param} to {topic_id}")
 
-    # elif topic_id in topics_id:
-    #     mqttclient0.publish(topic_id, param)
-    #     print(f"Publishing {param} to {topic_id}")
+    elif topic_id in topics_id:
+        mqttclient0.publish(topic_id, param)
+        print(f"Publishing {param} to {topic_id}")
 
     else:
         print('Feeds not exist')
