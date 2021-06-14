@@ -150,11 +150,11 @@ def receive_new_data():
     response.headers["Content-Type"] = "application/json"
     return response
 
-def get_mqtt():
-    global global_data, topics_pub
+def get_mqtt(topic_name = None):
+    global global_data, topics_id
 
     return_value = {"data": [], "status": "true"}
-    for topic in topics_pub: # topic is topic name
+    for topic in topics_id: # topic is topic_name
         value = None
         try:
             value = global_data[topic] # list
@@ -165,7 +165,11 @@ def get_mqtt():
             "id": topic,
             "value": value[-1] if value else None
         }
-        return_value['data'] += [itemDict]
+        if topic_name:
+            if topic == topic_name:
+                return_value['data'] += [itemDict]
+        else:
+            return_value['data'] += [itemDict]
 
     return json.dumps(return_value)
 

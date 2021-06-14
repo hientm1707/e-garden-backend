@@ -137,9 +137,11 @@ def handle_connection(json):
     print('client connected')
 
 @socketio.on('client-listen-data')
-def handle_client_need_data(data):
-    print(jsonify(data))
-    socketio.emit('server-send-mqtt', get_mqtt() )
+def handle_client_listen_data(data):
+    print(jsonify(data)) # data la gi
+    # get topic_name somehow
+    topic_name = None
+    socketio.emit('server-send-mqtt', get_mqtt(topic_name) )
 
 
 
