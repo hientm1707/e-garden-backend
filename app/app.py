@@ -1,11 +1,10 @@
 #-----------------------FEED_ID------------------------
-class FEED_ID:
-    LED_FEED = 'bk-iot-led'
-    SOIL_FEED = 'bk-iot-soil'
-    LIGHT_FEED = 'bk-iot-light'
-    LCD_FEED = 'bk-iot-lcd'
-    RELAY_FEED = 'bk-iot-relay'
-    DHT11_FEED =  'bk-iot-temp-humid'
+LED_FEED = 'bk-iot-led'
+SOIL_FEED = 'bk-iot-soil'
+LIGHT_FEED = 'bk-iot-light'
+LCD_FEED = 'bk-iot-lcd'
+RELAY_FEED = 'bk-iot-relay'
+DHT11_FEED =  'bk-iot-temp-humid'
 #----------------------Base setup-----------------------
 from Adafruit_IO import Client, RequestError
 from flask import Flask, request, jsonify, request, session, redirect, make_response
@@ -17,7 +16,7 @@ from pymongo import MongoClient
 # -----------------------Warning rate------------------------
 warningRates = {'temp_rate' : 40, 'humidity_rate': 65}
 
-# --------------------- MQTT Setups--------------------------
+# --------------------- MQTT Setups---------------------------------------------------------------
 import sys
 ADAFRUIT_IO_USERNAME = 'trminhhien17'
 ADAFRUIT_IO_KEYBBC = 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
@@ -39,10 +38,6 @@ data_for_LED = {"id":"1","name":"LED","data":"1","unit":""}
 
 # Define callback functions which will be called when certain events happen.
 def connected(client):
-    # Connected function will be called when the client is connected to Adafruit IO.
-    # This is a good place to subscribe to feed changes.  The client parameter
-    ## passed to this function is the Adafruit IO MQTT client so you can make
-    ## calls against it easily.
     # Subscribe to changes on a feed named DemoFeed.
     # client.subscribe(LCD_FEED)
     # client.subscribe(LED_FEED)
@@ -51,8 +46,7 @@ def connected(client):
     # client.subscribe(LIGHT_FEED)
     # client.subscribe(RELAY_FEED)
     client.subscribe('co2')
-    client.subscribe('humidity')
-    client.subscribe('temperature')
+
     print('Connected to Adafruit IO! Listening for changes on feeds...')
 def subscribe(client, userdata, mid, granted_qos):
     # This method is called when the client subscribes to a new feed.
@@ -81,7 +75,7 @@ def wake_up_MQTT():
     mqttClient.connect()
     mqttClient.loop_background()
 
-#-----------------------------
+#-------------------------------------------------------------------------------------------------------------
 
 #tls=True,tlsCRLFile=configuration['tlsPath']
 mgClient = MongoClient(configuration['mongoRemote'])
@@ -94,6 +88,7 @@ mqttClient = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
 from passlib.hash import pbkdf2_sha256
 import uuid
 class User:
+    session ={'logged_in':False, 'user':None}
     def start_session(self, user):
         del user['password']
         session['logged_in'] = True
@@ -135,15 +130,24 @@ class User:
         if user and pbkdf2_sha256.verify(request.get_json()['password'], user['password']):
             return self.start_session(user)
 
-        return jsonify({"error": "Invalid login Username or password"}), 400
+        return jsonify({"error": "Invalid Username or password"}), 400
 
     @staticmethod
     def publishToFeed(topic_id):
-        if (session['logged_in'] == True):
+        if 'logged_in' in session and session['logged_in']==True:
             value = request.get_json()['value']
             mqttClient.publish(topic_id,value)
             return jsonify({"status":"true"})
-        return jsonify({"error": "Not logged in"})
+        return jsonify({"error": "Not authorized in"}),400
+
+
+    @staticmethod
+    def unsubscribeFeed(topic_id):
+        if 'logged_in' in session and session['logged_in']==True:
+            mqttClient.unsubscribe(topic_id)
+            return jsonify({"status":"true","msg":"Feed {0} unsubscribed successfully".format(topic_id)}),200
+        return jsonify({"error": "Not authorized"}),400
+
 
 @app.route('/api/account/register', methods = ['POST'])
 def register():
@@ -192,7 +196,7 @@ def getSevenNearestValue(feed_id):
                 jsonify(
                     {"status": "false", "msg": "No feed available on username"}
                 ),
-                404
+                400
             )
             response.headers["Content-Type"] = "application/json"
             return response
@@ -204,7 +208,7 @@ def getSevenNearestValue(feed_id):
             jsonify(
                 responseObj
             ),
-            404
+            400
         )
     else:
         listOfDicts = []
@@ -244,7 +248,6 @@ def homepage():
     return '<p> ok </p>'
 
 
-
 @app.route('/api/account/<topic_id>', methods=['POST'])
 def publishToFeed(topic_id):
     return User.publishToFeed(topic_id)
@@ -264,6 +267,10 @@ def modifyHumidityRate():
     else:
         return jsonify({"rate":warningRates['humidity_rate'], "status":"true"}),200
 
+@app.route('/api/account/unsubscribe/<topic_id>', methods = ['GET'])
+def unsubscribe(topic_id):
+    return User.unsubscribeFeed(topic_id)
+
 @app.route('/api/account/temp_warning', methods = ['GET','PUT'])
 def modifyTempRate():
     if request.method == 'PUT':
@@ -279,17 +286,6 @@ def modifyTempRate():
         return jsonify({"rate":warningRates['temp_rate'],"status":"true"}),200
 
 
-#@socketio.on('incoming_message')
-# def handle_message(data):
-#     print('received message: ' + data)
-
-# @socketio.on('incoming_message')
-# def handle_message(data):
-#     print('received message: ' + data)
-#
-# @socketio.on('json')
-# def handle_json(json):
-#     print('received json: ' + str(json))
 #
 if __name__ == "__main__":
     app.run(debug=True)
