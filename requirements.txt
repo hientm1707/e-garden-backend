@@ -1,3 +1,4 @@
+Adafruit_IO==2.5.0
 passlib==1.7.4
 pymongo==3.11.4
 adafruit_bme280==1.0.1
