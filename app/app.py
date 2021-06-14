@@ -39,12 +39,12 @@ data_for_LED = {"id":"1","name":"LED","data":"1","unit":""}
 # Define callback functions which will be called when certain events happen.
 def connected(client):
     # Subscribe to changes on a feed named DemoFeed.
-    # client.subscribe(LCD_FEED)
-    # client.subscribe(LED_FEED)
-    # client.subscribe(SOIL_FEED)
-    # client.subscribe(DHT11_FEED)
-    # client.subscribe(LIGHT_FEED)
-    # client.subscribe(RELAY_FEED)
+    client.subscribe(LCD_FEED)
+    client.subscribe(LED_FEED)
+    client.subscribe(SOIL_FEED)
+    client.subscribe(DHT11_FEED)
+    client.subscribe(LIGHT_FEED)
+    client.subscribe(RELAY_FEED)
     client.subscribe('co2')
 
     print('Connected to Adafruit IO! Listening for changes on feeds...')
