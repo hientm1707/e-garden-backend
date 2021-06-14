@@ -145,9 +145,6 @@ class User:
             return jsonify({"status":"true"})
         return jsonify({"error": "Not logged in"})
 
-@app.route('/', methods = ['GET'])
-def homepage():
-    return '<p> ok </p>'
 @app.route('/api/account/register', methods = ['POST'])
 def register():
     return User().signup()
@@ -185,7 +182,7 @@ def subscribeToFeed():
 
 
 
-@app.route('/api/account/<feed_id>/data', methods = ['GET'])
+@app.route('/api/account/<feed_id>/seven_data', methods = ['GET'])
 def getSevenNearestValue(feed_id):
     restClient = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
     try:
@@ -246,9 +243,7 @@ def getAllSensorsLatestData():
 def homepage():
     return '<p> ok </p>'
 
-@socketio.on('incoming_message')
-def handle_message(data):
-    print('received message: ' + data)
+
 
 @app.route('/api/account/<topic_id>', methods=['POST'])
 def publishToFeed(topic_id):
@@ -284,7 +279,9 @@ def modifyTempRate():
         return jsonify({"rate":warningRates['temp_rate'],"status":"true"}),200
 
 
-
+#@socketio.on('incoming_message')
+# def handle_message(data):
+#     print('received message: ' + data)
 
 # @socketio.on('incoming_message')
 # def handle_message(data):
