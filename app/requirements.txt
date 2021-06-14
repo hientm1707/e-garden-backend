@@ -1,3 +1,0 @@
-pip install virtualenv
-env\Scripts\activate
-pip install flask pymongo passlib
