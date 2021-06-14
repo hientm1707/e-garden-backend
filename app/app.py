@@ -160,6 +160,26 @@ def login():
 def logout():
     return User().signout()
 
+@app.route('/api/account/<topic_id>/data',methods= ['GET'])
+def getDataOfTopic(topic_id):
+    restClient = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
+    try:
+        feed = restClient.feeds(topic_id)
+    except RequestError:
+            response = make_response(
+                jsonify(
+                    {"status": "false", "msg": "No feed available on username"}
+                ),
+                404
+            )
+            response.headers["Content-Type"] = "application/json"
+            return response
+    data = restClient.receive(feed.key)[3]
+    return jsonify({"status":"true", "value": data}),200
+
+
+
+
 @app.route('/api/account/<feed_id>/data', methods = ['GET'])
 def getSevenNearestValue(feed_id):
     restClient = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
@@ -207,8 +227,6 @@ def getAllSensorsLatestData():
     feeds = restClient.feeds()
     data = [{feed.key: restClient.receive(feed.key)[3]} for feed in feeds]
     return jsonify({"status":"true","data": data}),200
-
-
 
 
 
