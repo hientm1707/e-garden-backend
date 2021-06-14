@@ -11,7 +11,7 @@ from Adafruit_IO import Client, RequestError
 from flask import Flask, request, jsonify, request, session, redirect, make_response
 import yaml
 from mqtt_setup import *
-with open("db.yaml", "r") as ymlfile:
+with open("app/db.yaml", "r") as ymlfile:
     configuration = yaml.load(ymlfile,Loader=yaml.FullLoader)
 from pymongo import MongoClient
 # -----------------------Warning rate------------------------
