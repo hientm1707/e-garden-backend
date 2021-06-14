@@ -135,7 +135,7 @@ class User:
         if user and pbkdf2_sha256.verify(request.get_json()['password'], user['password']):
             return self.start_session(user)
 
-        return jsonify({"error": "Invalid login Username or password"}), 401
+        return jsonify({"error": "Invalid login Username or password"}), 400
 
     @staticmethod
     def publishToFeed(topic_id):
@@ -247,7 +247,7 @@ def modifyHumidityRate():
         return jsonify({"error": "Invalid input format"}), 400
 
     else:
-        return jsonify(warningRates['humidity_rate'])
+        return jsonify({"rate":warningRates['humidity_rate'], "status":"true"}),200
 
 @app.route('/api/account/temp_warning', methods = ['GET','PUT'])
 def modifyTempRate():
@@ -261,7 +261,7 @@ def modifyTempRate():
         return jsonify({"error":"Invalid input format"}),400
 
     else:
-        return jsonify(warningRates['temp_rate'])
+        return jsonify({"rate":warningRates['temp_rate'],"status":"true"}),200
 
 
 
