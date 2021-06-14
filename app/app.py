@@ -1,9 +1,10 @@
 from flask import Flask, render_template, flash, request,g, url_for, session
-from flask_socketio import SocketIO
+from flask.json import jsonify
+from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 # from form import LoginForm
 from werkzeug.utils import redirect
-from process_data import publish_data, receive_7_data
+from process_data import publish_data, receive_new_data, get_mqtt, global_data
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 socketio = SocketIO(app)
@@ -117,10 +118,9 @@ def send_data(username, topic_id):
         return publish_data(username, topic_id, value)
     return f"Couldn't work with param = {value}"
 
-@app.route("/api/account/<username>/<topic_id>/data", methods=["GET"])
-def get_7_data(username, topic_id):
-    
-    return receive_7_data(username,topic_id)
+@app.route("/api/account/data", methods=["GET"])
+def get_new_data():
+    return receive_new_data()
 
 
 @socketio.on('message')
@@ -130,6 +130,16 @@ def handle_message(data):
 @socketio.on('json')
 def handle_json(json):
     print('received json: ' + str(json))
+
+@socketio.on('connection')
+def handle_connection(json):
+    socketio.emit('connection', 'true')
+    print('client connected')
+
+@socketio.on('client-lissten-data')
+def handle_client_need_data(data):
+    print(jsonify(data))
+    socketio.emit('server-send-mqtt', get_mqtt() )
 
 
 
