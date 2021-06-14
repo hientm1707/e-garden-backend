@@ -4,3 +4,4 @@ adafruit_bme280==1.0.1
 adafruit_pca9685==1.0.1
 board==1.0
 paho_mqtt==1.5.1
+requests==2.8.1
