@@ -1,7 +1,6 @@
 passlib==1.7.4
 pymongo==3.11.4
 adafruit_bme280==1.0.1
-Adafruit_DHT==1.4.0
 adafruit_pca9685==1.0.1
 board==1.0
 paho_mqtt==1.5.1
