@@ -21,18 +21,20 @@ topics_pub = ['bk-iot-led', 'bk-iot-lcd', 'bk-iot-relay']
 
 global_data = {}
 
+## TEST
+# topics_id = ['bbc-led','test','bk-iot-led']
 test_feed = 'bbc-led'
 # Define callback functions which will be called when certain events happen.
 def connected(client):
   
-    print('Connected to Adafruit IO!  Listening for {0} changes...'.format(test_feed))
-    # Subscribe to changes on a feed named DemoFeed.
-    client.subscribe(test_feed) # only feed key
+    # print('Connected to Adafruit IO!  Listening for {0} changes...'.format(test_feed))
+    # # Subscribe to changes on a feed named DemoFeed.
+    # client.subscribe(test_feed) # only feed key
 
     # APP 
-    # for topic in topics_id: # sub all
-    #     print('Connected to Adafruit IO!  Listening for {0} changes...'.format(topic))
-    #     client.subscribe(topic)
+    for topic in topics_id: # sub all
+        print('Listening for {0} changes...'.format(topic))
+        client.subscribe(topic)
 
 def disconnected(client):
     # Disconnected function will be called when the client disconnects.
@@ -90,25 +92,28 @@ def publish_data(topic_id, param):
     return_status = {"status": "true"}
     if topic_id in ['bk-iot-led', 'bk-iot-lcd']:
         mqttclient0.publish(topic_id, param)
-        # mqttclient0.publish('CSE_BBC/feeds/' + topic_name, param)
         print(f"Publishing {param} to {topic_id}")
 
     elif topic_id in ['bk-iot-relay']:
         mqttclient1.publish(topic_id, param)
-        # mqttclient1.publish('CSE_BBC1/feeds/' + topic_name, param)
         print(f"Publishing {param} to {topic_id}")
+
+    # elif topic_id in topics_id:
+    #     mqttclient0.publish(topic_id, param)
+    #     print(f"Publishing {param} to {topic_id}")
 
     else:
         print('Feeds not exist')
         return_status = {"status": "false", "msg": "Feeds not exist"}
         # return json.dumps('{"status": "false"}')
-
+        response = make_response(
+                                    jsonify(return_status),404
+                                )
+        response.headers["Content-Type"] = "application/json"
+        return response
     response = make_response(
-        jsonify(
-            return_status
-        ),
-        200
-    )
+                                jsonify(return_status),200
+        )
     response.headers["Content-Type"] = "application/json"
     return response
     # return json.dumps('{"status": "true"}')
@@ -125,7 +130,7 @@ def receive_new_data():
         if topic in ['bk-iot-light', 'bk-iot-relay']:
             client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
             feed = client1.feeds(topic)
-            data = feed.get(feed.key) # get latest data
+            data = client1.receive(feed.key) # get latest data
             return_value['data'] += [{
                 "id": topic,
                 "value": data.value if data else None
@@ -134,7 +139,7 @@ def receive_new_data():
         else :
             client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
             feed = client0.feeds(topic)
-            data = feed.get(feed.key) # get latest data
+            data = client0.receive(feed.key) # get latest data
             return_value['data'] += [{
                 "id": topic,
                 "value": data.value if data else None
