@@ -1,23 +1,31 @@
 # -----------------------FEED_ID------------------------
+
+# ----------------------Base setup-----------------------
+from Adafruit_IO import Client, RequestError
+from flask import Flask, jsonify, request, session, make_response
+import yaml
+from mqtt_setup import *
+
+from flask_socketio import SocketIO
+
+with open("db.yaml", "r") as ymlfile:
+    configuration = yaml.load(ymlfile, Loader=yaml.FullLoader)
+from pymongo import MongoClient
+
+app = Flask(__name__)
+app.secret_key = "Secret Key"
+socketio = SocketIO(app, cors_allowed_origins="*")
+# -----------------------GlabalData------------------------
+context = {'temp_rate': 40, 'humidity_rate': 65}
+
 LED_FEED = 'bk-iot-led'
 SOIL_FEED = 'bk-iot-soil'
 LIGHT_FEED = 'bk-iot-light'
 LCD_FEED = 'bk-iot-lcd'
 RELAY_FEED = 'bk-iot-relay'
 DHT11_FEED = 'bk-iot-temp-humid'
-# ----------------------Base setup-----------------------
-from Adafruit_IO import Client, RequestError
-from flask import Flask, request, jsonify, request, session, redirect, make_response
-import yaml
-from mqtt_setup import *
-
-with open("db.yaml", "r") as ymlfile:
-    configuration = yaml.load(ymlfile, Loader=yaml.FullLoader)
-from pymongo import MongoClient
-
-# -----------------------Warning rate------------------------
-context = {'temp_rate': 40, 'humidity_rate': 65}
-
+feed_ids = [LED_FEED,SOIL_FEED,LIGHT_FEED,LCD_FEED,RELAY_FEED,DHT11_FEED]
+feed_pub =[LED_FEED, LCD_FEED, RELAY_FEED]
 # --------------------- MQTT Setups---------------------------------------------------------------
 import sys
 
@@ -39,22 +47,21 @@ data_for_LIGHT = {"id": "13", "name": "LIGHT", "data": "X", "unit": ""}
 data_for_LED = {"id": "1", "name": "LED", "data": "1", "unit": ""}
 
 
+
+
+
+
+
 # Define callback functions which will be called when certain events happen.
 def connected(client):
     # Subscribe to changes on a feed named DemoFeed.
-    client.subscribe(LCD_FEED)
-    client.subscribe(LED_FEED)
-    client.subscribe(SOIL_FEED)
-    client.subscribe(DHT11_FEED)
-    client.subscribe(LIGHT_FEED)
-    client.subscribe(RELAY_FEED)
-    # client.subscribe('co2')
-    print('Connected to Adafruit IO! Listening for changes on feeds...')
+    for feed in feed_ids:  # sub all
+        print('Listening for {0} changes...'.format(feed))
+        client.subscribe(feed)
 
 
 def subscribe(client, userdata, mid, granted_qos):
     # This method is called when the client subscribes to a new feed.
-
     print('Subscribed to  feed with QoS {0}'.format(granted_qos[0]))
 
 
@@ -69,8 +76,14 @@ def message(client, feed_id, payload):
     # The feed_id parameter identifies the feed, and the payload parameter has
     # the new value.
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
+    global global_data
+    try:
+        global_data[feed_id] += [json.loads(payload)]  # json to dict
+    except KeyError:
+        global_data[feed_id] = [json.loads(payload)]  # json to dict
+    print(global_data)
 
-
+#-------------------------------------------------------------------------------------------------------------
 def wake_up_MQTT():
     # mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME2,ADAFRUIT_IO_KEYBBC1)
     # Setup the callback functions defined above.
@@ -80,18 +93,175 @@ def wake_up_MQTT():
     mqttClient.on_subscribe = subscribe
     mqttClient.connect()
     mqttClient.loop_background()
+def publish_data(topic_id, param):
+    topic_index = {'bk-iot-led': "1", 'bk-iot-lcd': "3", 'bk-iot-relay': "11"}
+    return_status = {"status": "true"}
+    if topic_id in ['bk-iot-led', 'bk-iot-lcd']:
+        item_json = {
+            "id": topic_index[topic_id],
+            "name": topic_id[7:].upper(),
+            "data": param,
+            "unit": ""
+        }
+        mqttClient0.publish(topic_id, json.dumps(item_json))
+        print(f"Publishing {param} to {topic_id}")
+
+    elif topic_id in ['bk-iot-relay']:
+        item_json = {
+            "id": topic_index[topic_id],
+            "name": topic_id[7:].upper(),
+            "data": param,
+            "unit": ""
+        }
+        mqttClient1.publish(topic_id, json.dumps(item_json))
+        print(f"Publishing {param} to {topic_id}")
+
+    elif topic_id in topics_id:  # pub for sub too # just for testing
+        topic_index = {'bk-iot-soil': "9", "bk-iot-light": "13", 'bk-iot-temp-humid': "7"}
+
+        item_json = {
+            "id": topic_index[topic_id],
+            "name": topic_id[7:].upper(),
+            "data": param,
+            "unit": "*C-%" if 'temp' in topic_id else ""
+        }
+        mqttClient0.publish(topic_id, json.dumps(item_json))
+        print(f"Publishing {param} to {topic_id}")
+
+    else:
+        print('Feeds not exist')
+        return_status = {"status": "false", "msg": "Feeds not exist"}
+        # return json.dumps('{"status": "false"}')
+        response = make_response(
+            jsonify(return_status), 404
+        )
+        response.headers["Content-Type"] = "application/json"
+        return response
+
+    response = make_response(
+        jsonify(return_status), 200
+    )
+    response.headers["Content-Type"] = "application/json"
+    return response
+    # return json.dumps('{"status": "true"}')
+
+def receive_new_data():
+    global topics_id
+    return_value = {"data": [], "status": "true"}
+
+    for topic in topics_id:
+
+        if topic in ['bk-iot-light', 'bk-iot-relay']:
+            client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
+            feed = client1.feeds(topic)
+            data = client1.receive(feed.key)  # get latest data : json
+            data = json.loads(data.value)['data']
+            return_value['data'] += [{
+                "id": topic,
+                "data": data if data else None
+            }]
+
+        else:
+            client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+            feed = client0.feeds(topic)
+            data = client0.receive(feed.key)  # get latest data : json
+            print(data, data.value, type(data.value))
+            data = json.loads(data.value)['data']
+            if topic == 'bk-iot-temp-humid':
+                temp, humid = data.split('-')
+                return_value['data'] += [{
+                    "id": topic,
+                    "data": {
+                        "temp": temp,
+                        'humid': humid
+                    }
+                }]
+            else:  # not temp-humid
+                return_value['data'] += [{
+                    "id": topic,
+                    "data": data if data else None
+                }]
+    response = make_response(
+        jsonify(
+            return_value
+        ),
+        200
+    )
+    response.headers["Content-Type"] = "application/json"
+    return response
+
+
+def get_mqtt(topic_name):
+    global global_data
+
+    value = None
+    try:
+        value = global_data[topic_name]  # value is list of dict
+    except KeyError:
+        value = None
+    itemDict = {}
+    if topic_name == 'bk-iot-temp-humid':
+        if value:
+            value = value[-1]  # last dict
+            temp, humid = value['data'].split('-')
+            itemDict = {
+                'id': topic_name,
+                'value': {
+                    'temp': temp,
+                    'humid': humid
+                }
+            }
+        else:  # if value is None
+            itemDict = {
+                'id': topic_name,
+                'value': {
+                    'temp': None,
+                    'humid': None
+                }
+            }
+    else:
+        itemDict = {
+            'id': topic_name,
+            'value': value[-1]['data'] if value else None
+        }
+    return json.dumps(itemDict)
+
+
+ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
+ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
+
+mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+
+client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+# client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
+
+# APP
+# client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+# client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
+
+# mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+# mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
+
+mqttClient0.on_connect = connected
+mqttClient0.on_disconnect = disconnected
+mqttClient0.on_message = message
+# mqttClient0.on_connect    = connected
+# mqttClient0.on_disconnect = disconnected
+# mqttClient0.on_message    = message
+
+mqttClient0.connect()
+# mqttClient1.connect()
+
+mqttClient0.loop_background()
+
+
 
 
 # -------------------------------------------------------------------------------------------------------------
-
-# tls=True,tlsCRLFile=configuration['tlsPath']
 mgClient = MongoClient(configuration['mongoRemote'])
 db = mgClient.get_database('DoAnDaNganh')
-app = Flask(__name__)
-app.secret_key = "Secret Key"
-
 mqttClient = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
-
 from passlib.hash import pbkdf2_sha256
 import uuid
 
@@ -248,6 +418,7 @@ def getAllSensorsLatestData():
     data = [{feed.key: restClient.receive(feed.key)[3]} for feed in feeds]
     return jsonify({"status": "true", "data": data}), 200
 
+
 @app.route('/', methods=['GET'])
 def homepage():
     return '<p> ok </p>'
@@ -276,9 +447,12 @@ def modifyHumidityRate():
 @app.route('/api/account/unsubscribe/<topic_id>', methods=['GET'])
 def unsubscribe(topic_id):
     return User.unsubscribeFeed(topic_id)
+
+
 @app.route('/api/account/subscribe/<topic_id>', methods=['GET'])
 def subscribe(topic_id):
     return User.subscribeFeed(topic_id)
+
 
 @app.route('/api/account/temp_warning', methods=['GET', 'PUT'])
 def modifyTempRate():
@@ -295,7 +469,38 @@ def modifyTempRate():
         return jsonify({"rate": context['temp_rate'], "status": "true"}), 200
 
 
+@socketio.on('bk-iot-led')
+def handle_client_listen_data(data=None):
+    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-led'))
+
+
+@socketio.on('bk-iot-soil')
+def handle_client_listen_data(data=None):
+    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-soil'))
+
+
+@socketio.on('bk-iot-light')
+def handle_client_listen_data(data=None):
+    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-light'))
+
+
+@socketio.on('bk-iot-lcd')
+def handle_client_listen_data(data=None):
+    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-lcd'))
+
+
+@socketio.on('bk-iot-relay')
+def handle_client_listen_data(data=None):
+    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-relay'))
+
+
+@socketio.on('bk-iot-temp-humid')
+def handle_client_listen_data(data=None):
+    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-temp-humid'))
+
+
 #
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
+    socketio.run(app, debug=True)
     ##
