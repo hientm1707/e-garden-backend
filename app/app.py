@@ -198,13 +198,6 @@ def getDataOfTopic(topic_id):
     return jsonify({"status": "true", "value": data}), 200
 
 
-@app.route('/api/account/minhhientran/add', methods=['POST'])
-def subscribeToFeed():
-    if request.method == 'POST':
-        data = request.get_json()
-        topic_id = data['topic_id']
-
-
 @app.route('/api/account/<feed_id>/seven_data', methods=['GET'])
 def getSevenNearestValue(feed_id):
     restClient = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEYBBC)
@@ -294,7 +287,7 @@ def modifyHumidityRate():
 def unsubscribe(topic_id):
     return User.unsubscribeFeed(topic_id)
 @app.route('/api/account/subscribe/<topic_id>', methods=['GET'])
-def unsubscribe(topic_id):
+def subscribe(topic_id):
     return User.subscribeFeed(topic_id)
 
 @app.route('/api/account/temp_warning', methods=['GET', 'PUT'])
