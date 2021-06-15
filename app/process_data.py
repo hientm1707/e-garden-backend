@@ -60,8 +60,8 @@ def message(client, feed_id, payload):
 ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 
-mqttclient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
-mqttclient1 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
 
 client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
 # client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
@@ -70,21 +70,21 @@ client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
 # client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
 # client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
 
-# mqttclient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
-# mqttclient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
+# mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+# mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
 
-mqttclient0.on_connect    = connected
-mqttclient0.on_disconnect = disconnected
-mqttclient0.on_message    = message
-# mqttclient0.on_connect    = connected
-# mqttclient0.on_disconnect = disconnected
-# mqttclient0.on_message    = message
+mqttClient0.on_connect    = connected
+mqttClient0.on_disconnect = disconnected
+mqttClient0.on_message    = message
+# mqttClient0.on_connect    = connected
+# mqttClient0.on_disconnect = disconnected
+# mqttClient0.on_message    = message
 
-mqttclient0.connect()
-# mqttclient1.connect()
+mqttClient0.connect()
+# mqttClient1.connect()
 
-mqttclient0.loop_background()
-# mqttclient1.loop_background()
+mqttClient0.loop_background()
+# mqttClient1.loop_background()
 
 
 def publish_data(topic_id, param):
@@ -95,25 +95,25 @@ def publish_data(topic_id, param):
     if topic_id in ['bk-iot-led', 'bk-iot-lcd']:
         item_json = {
             "id" : topic_index[topic_id],
-            "name" : "LED" if topic_id == 'bk-iot-led' else "LCD",
+            "name" : topic_id[7:].upper(),
             "data" : param,
             "unit" : ""
         }
-        mqttclient0.publish(topic_id, json.dumps(item_json))
+        mqttClient0.publish(topic_id, json.dumps(item_json))
         print(f"Publishing {param} to {topic_id}")
 
     elif topic_id in ['bk-iot-relay']:
         item_json = {
             "id" : topic_index[topic_id],
-            "name" : "RELAY",
+            "name" : topic_id[7:].upper(),
             "data" : param,
             "unit" : ""
         }
-        mqttclient1.publish(topic_id, json.dumps(item_json))
+        mqttClient1.publish(topic_id, json.dumps(item_json))
         print(f"Publishing {param} to {topic_id}")
 
     elif topic_id in topics_id: # pub for sub too # just for testing
-        topic_index = {'bk-iot-soil': "9", "bk-iot-light": "13", 'bk-iot-temp-humid': "7"} # todo create pub for soil to pub again cause soil is spoiled
+        topic_index = {'bk-iot-soil': "9", "bk-iot-light": "13", 'bk-iot-temp-humid': "7"} 
         
         item_json = {
             "id" : topic_index[topic_id],
@@ -121,7 +121,7 @@ def publish_data(topic_id, param):
             "data" : param,
             "unit" : "*C-%" if 'temp' in topic_id else ""
         }
-        mqttclient0.publish(topic_id, json.dumps(item_json))
+        mqttClient0.publish(topic_id, json.dumps(item_json))
         print(f"Publishing {param} to {topic_id}")
 
     else:
@@ -154,7 +154,7 @@ def receive_new_data():
             client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
             feed = client1.feeds(topic)
             data = client1.receive(feed.key) # get latest data : json
-            data = json.loads(data.value)['data'] # FIXME
+            data = json.loads(data.value)['data'] 
             return_value['data'] += [{
                 "id": topic,
                 "data": data if data else None
@@ -165,7 +165,7 @@ def receive_new_data():
             feed = client0.feeds(topic)
             data = client0.receive(feed.key) # get latest data : json
             print(data,data.value, type(data.value))
-            data = json.loads(data.value)['data'] # FIXME
+            data = json.loads(data.value)['data'] 
             if topic == 'bk-iot-temp-humid':
                 temp,humid = data.split('-')
                 return_value['data'] += [{
