@@ -212,7 +212,7 @@ def getSevenNearestValue(feed_id):
         )
         response.headers["Content-Type"] = "application/json"
         return response
-    listCreatedAt = [x.created_at for x in restClient.data('co2')[-7:]]
+    listCreatedAt = [x.created_at for x in restClient.data(feed_id)[-7:]]
     listValue = [x.value for x in restClient.data('co2')[-7:]]
     if not listValue:
         responseObj = {"status": "false", "msg": "Feed has no data yet"}
@@ -248,16 +248,6 @@ def getAllSensorsLatestData():
     data = [{feed.key: restClient.receive(feed.key)[3]} for feed in feeds]
     return jsonify({"status": "true", "data": data}), 200
 
-
-# @app.route('/index')
-# def index():
-#     # Check if user is loggedin
-#     if 'loggedin' in session:
-#         # User is loggedin show them the home page
-#         return json.dumps('{"status":"true"}')
-#     # User is not loggedin redirect to login page
-#     return json.dumps('{"msg":"Not authenticated"}')
-#
 @app.route('/', methods=['GET'])
 def homepage():
     return '<p> ok </p>'
