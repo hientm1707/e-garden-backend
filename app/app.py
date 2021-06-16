@@ -1,4 +1,3 @@
-
 # ----------------------Base setup-----------------------
 from Adafruit_IO import Client, RequestError
 from flask import Flask, jsonify, request, session, make_response
@@ -18,7 +17,7 @@ db = mgClient.get_database('DoAnDaNganh')
 socketio = SocketIO(app, cors_allowed_origins="*")
 # --------------------------------------GlabalData------------------------
 context = {'temp_rate': 40, 'humidity_rate': 65}
-global_data ={}
+global_data = {}
 #---------------------------------------FEEDS--------------------------------
 LED_FEED = 'bk-iot-led'
 SOIL_FEED = 'bk-iot-soil'
@@ -26,16 +25,14 @@ LIGHT_FEED = 'bk-iot-light'
 LCD_FEED = 'bk-iot-lcd'
 RELAY_FEED = 'bk-iot-relay'
 DHT11_FEED = 'bk-iot-temp-humid'
-all_feed_ids = [LED_FEED,SOIL_FEED,LIGHT_FEED,LCD_FEED,RELAY_FEED,DHT11_FEED]
+#all_feed_ids = [LED_FEED,SOIL_FEED,LIGHT_FEED,LCD_FEED,RELAY_FEED,DHT11_FEED]
 feed_pub =[LED_FEED, LCD_FEED, RELAY_FEED]
 feeds_of_client = [[LED_FEED,SOIL_FEED,LCD_FEED,DHT11_FEED],[LIGHT_FEED,RELAY_FEED]]
 ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
-
 # ------------------------------- MQTT Setups---------------------------------------------------------------
 mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
 mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
-mqttClientList = [mqttClient0,mqttClient1]
 #--------------------------------Data prepare-------------------------------------------------------
 # #X = temp-humid
 # data_for_DHT11 = {"id": "7", "name": "TEMP-HUMID", "data": "X", "unit": "*C-%"}
@@ -54,15 +51,11 @@ def wake_up_MQTT(client):
     client.on_connect = connected
     client.on_disconnect = disconnected
     client.on_message = message
-    client.on_subscribe = subscribe
     client.connect()
     client.loop_background()
 
 def connected(client):
     [client.subscribe(x) for x in feeds_of_client[0]] if client is mqttClient0 else [client.subscribe(x) for x in feeds_of_client[1]]
-
-def subscribe(client, userdata, mid, granted_qos):
-    print('Subscribed to  feed with QoS {0}'.format(granted_qos[0]))
 
 def disconnected(client):
     print('Disconnected from Adafruit IO!')
@@ -98,13 +91,13 @@ def get_mqtt(topic_name):
 # --------------------------------------------User-------------------------------------------------
 
 class User:
-    session = {'logged_in': False, 'user': None}
     def start_session(self, user):
         del user['password']
         session['logged_in'] = True
         session['user'] = user
         # Create an MQTT client instance.
-        [wake_up_MQTT(client) for client in mqttClientList]
+        wake_up_MQTT(mqttClient0);
+        wake_up_MQTT(mqttClient1);
         return jsonify({"status": "true"}), 200
 
     def signup(self):
@@ -125,7 +118,7 @@ class User:
         if db.User.insert_one(user):
             return self.start_session(user)
 
-        return jsonify({"error": "Signup failed"}), 400
+        return jsonify({"error": "Signup fai led"}), 400
 
     def signout(self):
         session.clear()
@@ -141,8 +134,6 @@ class User:
         return jsonify({"error": "Invalid Username or password"}), 400
 
     @staticmethod
-
-
     def publishToFeed(feed_id):
         data_for_RELAY = {"id": "11", "name": "RELAY", "data": "X", "unit": ""}
         data_for_LED = {"id": "1", "name": "LED", "data": "X", "unit": ""}
@@ -172,9 +163,9 @@ class User:
                     dataToPublish = data_for_LCD
 
             if feed_id in feeds_of_client[0]:
-                mqttClient0.publish(feed_id, dataToPublish)
+                mqttClient0.publish(feed_id, json.dumps(dataToPublish))
             else:
-                mqttClient1.publish(feed_id,dataToPublish)
+                mqttClient1.publish(feed_id, json.dumps(dataToPublish))
             return jsonify({"status": "true", "msg": "Published {0} to feed {1}".format(value, feed_id)}), 200
         return jsonify({"error": "Not authorized "}), 400
 
@@ -194,7 +185,6 @@ class User:
             return jsonify({"status": "true", "msg": "Feed {0} unsubscribed successfully".format(feed_id)}), 200
         return jsonify({"error": "Not authorized"}), 400
 
-
 #----------------------------------------ROUTES------------------------------------------------
 @app.route('/', methods=['GET'])
 def homepage():
@@ -212,17 +202,17 @@ def login():
 def logout():
     return User().signout()
 
-@app.route('/api/account/unsubscribe/<topic_id>', methods=['GET'])
-def unsubscribe(topic_id):
-    return User.unsubscribeFeed(topic_id)
+@app.route('/api/account/unsubscribe/<feed_id>', methods=['GET'])
+def unsubscribe(feed_id):
+    return User.unsubscribeFeed(feed_id)
 
-@app.route('/api/account/<topic_id>', methods=['POST'])
-def publishToFeed(topic_id):
-    return User.publishToFeed(topic_id)
+@app.route('/api/account/<feed_id>', methods=['POST'])
+def publishToFeed(feed_id):
+    return User.publishToFeed(feed_id)
 
-@app.route('/api/account/subscribe/<topic_id>', methods=['GET'])
-def subscribe(topic_id):
-    return User.subscribeFeed(topic_id)
+@app.route('/api/account/subscribe/<feed_id>', methods=['GET'])
+def subscribe(feed_id):
+    return User.subscribeFeed(feed_id)
 
 @app.route('/api/account/<feed_id>/data', methods=['GET'])
 def getDataOfTopic(feed_id):
@@ -383,5 +373,5 @@ def handle_client_listen_data(data=None):
 
 if __name__ == "__main__":
     app.run(debug=True)
-    socketio.run(app, debug=True)
+    #socketio.run(app, debug=True)
     ##
