@@ -73,13 +73,15 @@ def get_mqtt(feed_id):
 
 class User:
     #Static objects
-    mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
-    mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
+    mqttClient0 = None
+    mqttClient1 = None
     def start_session(self, user):
         del user['password']
         session['logged_in'] = True
         session['user'] = user
         # Create an MQTT client instance.
+        User.mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+        User.mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
         wake_up_MQTT(User.mqttClient0);
         wake_up_MQTT(User.mqttClient1);
         return jsonify({"status": "true"}), 200
@@ -105,7 +107,15 @@ class User:
         return jsonify({"error": "Signup fai led"}), 400
 
     def signout(self):
-        session.clear()
+        if session:
+            session.clear()
+            User.mqttClient0.disconnect()
+            User.mqttClient1.disconnect()
+            User.mqttClient0 = None
+            User.mqttClient1 = None
+        else:
+            return jsonify({"error": "Not logged in"})
+
         return jsonify({"status": "true"}), 200
 
     def login(self):
