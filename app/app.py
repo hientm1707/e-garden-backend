@@ -1,4 +1,3 @@
-# -----------------------FEED_ID------------------------
 
 # ----------------------Base setup-----------------------
 from Adafruit_IO import Client, RequestError
@@ -27,11 +26,8 @@ LIGHT_FEED = 'bk-iot-light'
 LCD_FEED = 'bk-iot-lcd'
 RELAY_FEED = 'bk-iot-relay'
 DHT11_FEED = 'bk-iot-temp-humid'
-
-
 all_feed_ids = [LED_FEED,SOIL_FEED,LIGHT_FEED,LCD_FEED,RELAY_FEED,DHT11_FEED]
 feed_pub =[LED_FEED, LCD_FEED, RELAY_FEED]
-
 feeds_of_client = [[LED_FEED,SOIL_FEED,LCD_FEED,DHT11_FEED],[LIGHT_FEED,RELAY_FEED]]
 ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
@@ -41,15 +37,18 @@ mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
 mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
 mqttClientList = [mqttClient0,mqttClient1]
 #--------------------------------Data prepare-------------------------------------------------------
-data_for_DHT11 = {"id": "7", "name": "TEMP-HUMID", "data": "X", "unit": "*C-%"}
-data_for_RTC = {"id": "22", "name": "TIME", "data": "x", "unit": ""}
-# X = 0 tat , X = 1 mo
-data_for_RELAY = {"id": "11", "name": "RELAY", "data": "X", "unit": ""}
-# INPUT:  X<100 toi, X>100 sang
-data_for_LIGHT = {"id": "13", "name": "LIGHT", "data": "X", "unit": ""}
-# X = 0 – OFF, X = 1 – RED,X = 2 – BLUE
-data_for_LED = {"id": "1", "name": "LED", "data": "1", "unit": ""}
-
+# #X = temp-humid
+# data_for_DHT11 = {"id": "7", "name": "TEMP-HUMID", "data": "X", "unit": "*C-%"}
+# # X = 0 tat , X = 1 mo
+# data_for_RELAY = {"id": "11", "name": "RELAY", "data": "X", "unit": ""}
+# # INPUT:  X<100 toi, X>100 sang
+# data_for_LIGHT = {"id": "13", "name": "LIGHT", "data": "X", "unit": ""}
+# # X = 0 – OFF, X = 1 – RED,X = 2 – BLUE
+# data_for_LED = {"id": "1", "name": "LED", "data": "X", "unit": ""}
+# #X= 0 - 1023 ||  X < 100: Dry, X > 100: Đất ẩm
+# data_for_SOIL = {"id":"9","name":"SOIL ","data":"X","unit":""}
+# # X = Chuoi hien tren LCD (toi da 12 characters)
+# data_for_LCD = {"id": "3","name": "LCD","data": "X","unit": ""}
 #--------------------------------------Function for MQTT-----------------------------------------------------------------------
 def wake_up_MQTT(client):
     client.on_connect = connected
@@ -95,59 +94,6 @@ def get_mqtt(topic_name):
             return json.dumps({"id": topic_name,"value": {"temp": None,"humid": None}})
     else:
         return json.dumps({"id": topic_name, "value": value[-1]['data'] if value else None})
-
-#-------------------------------------------------------------
-# def publish_data(topic_id, param):
-#     topic_index = {'bk-iot-led': "1", 'bk-iot-lcd': "3", 'bk-iot-relay': "11"}
-#     return_status = {"status": "true"}
-#     if topic_id in ['bk-iot-led', 'bk-iot-lcd']:
-#         item_json = {
-#             "id": topic_index[topic_id],
-#             "name": topic_id[7:].upper(),
-#             "data": param,
-#             "unit": ""
-#         }
-#         mqttClient0.publish(topic_id, json.dumps(item_json))
-#         print(f"Publishing {param} to {topic_id}")
-#
-#     elif topic_id in ['bk-iot-relay']:
-#         item_json = {
-#             "id": topic_index[topic_id],
-#             "name": topic_id[7:].upper(),
-#             "data": param,
-#             "unit": ""
-#         }
-#         mqttClient1.publish(topic_id, json.dumps(item_json))
-#         print(f"Publishing {param} to {topic_id}")
-#
-#     elif topic_id in topics_id:  # pub for sub too # just for testing
-#         topic_index = {'bk-iot-soil': "9", "bk-iot-light": "13", 'bk-iot-temp-humid': "7"}
-#
-#         item_json = {
-#             "id": topic_index[topic_id],
-#             "name": topic_id[7:].upper(),
-#             "data": param,
-#             "unit": "*C-%" if 'temp' in topic_id else ""
-#         }
-#         mqttClient0.publish(topic_id, json.dumps(item_json))
-#         print(f"Publishing {param} to {topic_id}")
-#
-#     else:
-#         print('Feeds not exist')
-#         return_status = {"status": "false", "msg": "Feeds not exist"}
-#         # return json.dumps('{"status": "false"}')
-#         response = make_response(
-#             jsonify(return_status), 404
-#         )
-#         response.headers["Content-Type"] = "application/json"
-#         return response
-#
-#     response = make_response(
-#         jsonify(return_status), 200
-#     )
-#     response.headers["Content-Type"] = "application/json"
-#     return response
-    # return json.dumps('{"status": "true"}')
 
 # --------------------------------------------User-------------------------------------------------
 
@@ -195,19 +141,46 @@ class User:
         return jsonify({"error": "Invalid Username or password"}), 400
 
     @staticmethod
+
+
     def publishToFeed(feed_id):
-        if 'logged_in' in session and session['logged_in'] == True:
+        data_for_RELAY = {"id": "11", "name": "RELAY", "data": "X", "unit": ""}
+        data_for_LED = {"id": "1", "name": "LED", "data": "X", "unit": ""}
+        data_for_LCD = {"id": "3", "name": "LCD", "data": "X", "unit": ""}
+        if feed_id not in feed_pub:
+            return jsonify({"error": "You cant publish to this feed"}), 400
+        dataToPublish = None
+        if 'logged_in' in session and session['logged_in'] is True:
             value = request.get_json()['value']
+            if feed_id == LED_FEED:
+                if (not isinstance(value,int)) or (value not in range(3)):
+                    return jsonify({"error":"Invalid input"}),400
+                else:
+                    data_for_LED['data']= str(value)
+                    dataToPublish = data_for_LED
+            elif feed_id == LCD_FEED:
+                if (not isinstance(value,str)) or (len(value) > 12):
+                    return jsonify({"error": "Invalid input"}), 400
+                else:
+                    data_for_LCD['data'] = value
+                    dataToPublish = data_for_LCD
+            else: #Relay:
+                if (not isinstance(value,int)) or (value not in range(2)):
+                    return jsonify({"error": "Invalid input"}), 400
+                else:
+                    data_for_RELAY['data'] = str(value)
+                    dataToPublish = data_for_LCD
+
             if feed_id in feeds_of_client[0]:
-                mqttClient0.publish(feed_id, value)
+                mqttClient0.publish(feed_id, dataToPublish)
             else:
-                mqttClient1.publish(feed_id,value)
-            return jsonify({"status": "true","msg":"Published {0} to feed {1}".format(value,feed_id)})
-        return jsonify({"error": "Not authorized in"}), 400
+                mqttClient1.publish(feed_id,dataToPublish)
+            return jsonify({"status": "true", "msg": "Published {0} to feed {1}".format(value, feed_id)}), 200
+        return jsonify({"error": "Not authorized "}), 400
 
     @staticmethod
     def subscribeFeed(feed_id):
-        if 'logged_in' in session and session['logged_in'] == True:
+        if 'logged_in' in session and session['logged_in'] is True:
             realClient = mqttClient0 if feed_id in feeds_of_client[0] else mqttClient1
             realClient.subscribe(feed_id)
             return jsonify({"status": "true", "msg": "Feed {0} subscribed successfully".format(feed_id)}), 200
@@ -409,6 +382,6 @@ def handle_client_listen_data(data=None):
     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-temp-humid'))
 
 if __name__ == "__main__":
-    #app.run(debug=True)
+    app.run(debug=True)
     socketio.run(app, debug=True)
     ##
