@@ -177,57 +177,36 @@ def receive_new_data():
     return jsonify(return_value),200
 
 
+## optimize 7data #1:
 def getSevenNearestValue(feed_id):
     dict_data = []
-    client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1) 
-    client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
     topic1 = ['bk-iot-light', 'bk-iot-relay']
-    topic0 = ['bk-iot-led', 'bk-iot-soil', 'bk-iot-lcd', 'bk-iot-temp-humid']
+    # topic0 = ['bk-iot-led', 'bk-iot-soil', 'bk-iot-lcd', 'bk-iot-temp-humid']
+    
+    client = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1) if feed_id in topic1 else Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+    
+    data = client.data(feed_id)[:7]
+    if data:
+        for i in data:
+            try:
+                value = json.loads(i[3])['data']
+            except TypeError:
+                value = i[3]
 
-    if feed_id in topic1:
-        data = client1.data(feed_id)[:7] # list of 7 Data()
-        if data:
-            for i in data: # i : Data()
-                try:
-                    value = json.loads(i[3])['data']
-                except TypeError: # if value == int not json
-                    value = i[3]
-
-                dict_data += [{
-                    "created_at": i.created_at,
-                    "value": value
-                }]
-            return_value = {"data": dict_data, "status":"true"}
-            return jsonify(return_value),200
-        else:
-            return_value = {"data": None, "status":"False", "msg": "Feed has no data"}
-            return jsonify(return_value),404
-
-    elif feed_id in topic0:
-        data = client0.data(feed_id)[:7]
-        if data:
-            for i in data:
-                print(i,type(i)) #
-                try:
-                    value = json.loads(i[3])['data']
-                except TypeError:
-                    value = i[3]
-
-                if feed_id == 'bk-iot-temp-humid':
-                    temp,humid = value.split('-')
-                    value = { 'temp':temp, 'humid':humid}
-                dict_data += [{
-                    "created_at": i.created_at,
-                    "value": value
-                }]
-            return_value = {"data": dict_data, "status":"true"}
-            return jsonify(return_value),200
-        else:
-            return_value = {"data": None, "status":"false", "msg": "Feed has no data"}
-            return jsonify(return_value),404
+            if feed_id == 'bk-iot-temp-humid':
+                temp,humid = value.split('-')
+                value = { 'temp': temp, 'humid': humid }
+            
+            dict_data += [{
+                "created_at": i.created_at,
+                "value": value
+            }]
+        return_value = {"data": dict_data, "status":"true"}
+        return jsonify(return_value),200
     else:
-        return_value = {"data": None, "status":"false", "msg": "Feed not exist"}
+        return_value = {"data": None, "status":"false", "msg": "Feed has no data"}
         return jsonify(return_value),404
+
 
 def get_mqtt(topic_name):
     global global_data
