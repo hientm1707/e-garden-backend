@@ -31,8 +31,7 @@ feeds_of_client = [[LED_FEED,SOIL_FEED,LCD_FEED,DHT11_FEED],[LIGHT_FEED,RELAY_FE
 ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 # ------------------------------- MQTT Setups---------------------------------------------------------------
-mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
-mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
+
 #--------------------------------Data prepare-------------------------------------------------------
 # #X = temp-humid
 # data_for_DHT11 = {"id": "7", "name": "TEMP-HUMID", "data": "X", "unit": "*C-%"}
@@ -55,7 +54,7 @@ def wake_up_MQTT(client):
     client.loop_background()
 
 def connected(client):
-    [client.subscribe(x) for x in feeds_of_client[0]] if client is mqttClient0 else [client.subscribe(x) for x in feeds_of_client[1]]
+    [client.subscribe(x) for x in feeds_of_client[0]] if client is User.mqttClient0 else [client.subscribe(x) for x in feeds_of_client[1]]
 
 def disconnected(client):
     print('Disconnected from Adafruit IO!')
@@ -70,34 +69,37 @@ def message(client, feed_id, payload):
         global_data[feed_id] = [json.loads(payload)]  # json to dict
     print(global_data)
 
-def get_mqtt(topic_name):
+def get_mqtt(feed_id):
     global global_data
     value = None
     try:
-        value = global_data[topic_name]
+        value = global_data[feed_id]
     except KeyError:
         value = None
     itemDict = {}
-    if topic_name == 'bk-iot-temp-humid':
+    if feed_id == 'bk-iot-temp-humid':
         if value:
             value = value[-1]  # last dict
             temp, humid = value['data'].split('-')
-            return json.dumps({"id": topic_name, "value": {"temp": temp, "humid": humid}})
+            return json.dumps({"id": feed_id, "value": {"temp": temp, "humid": humid}})
         else:  # if value is None
-            return json.dumps({"id": topic_name,"value": {"temp": None,"humid": None}})
+            return json.dumps({"id": feed_id,"value": {"temp": None,"humid": None}})
     else:
-        return json.dumps({"id": topic_name, "value": value[-1]['data'] if value else None})
+        return json.dumps({"id": feed_id, "value": value[-1]['data'] if value else None})
 
 # --------------------------------------------User-------------------------------------------------
 
 class User:
+    #Static objects
+    mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
+    mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
     def start_session(self, user):
         del user['password']
         session['logged_in'] = True
         session['user'] = user
         # Create an MQTT client instance.
-        wake_up_MQTT(mqttClient0);
-        wake_up_MQTT(mqttClient1);
+        wake_up_MQTT(User.mqttClient0);
+        wake_up_MQTT(User.mqttClient1);
         return jsonify({"status": "true"}), 200
 
     def signup(self):
@@ -163,24 +165,24 @@ class User:
                     dataToPublish = data_for_LCD
 
             if feed_id in feeds_of_client[0]:
-                mqttClient0.publish(feed_id, json.dumps(dataToPublish))
+                User.mqttClient0.publish(feed_id, json.dumps(dataToPublish))
             else:
-                mqttClient1.publish(feed_id, json.dumps(dataToPublish))
+                User.mqttClient1.publish(feed_id, json.dumps(dataToPublish))
             return jsonify({"status": "true", "msg": "Published {0} to feed {1}".format(value, feed_id)}), 200
-        return jsonify({"error": "Not authorized "}), 400
+        return jsonify({"error": "Not authenticated "}), 400
 
     @staticmethod
     def subscribeFeed(feed_id):
         if 'logged_in' in session and session['logged_in'] is True:
-            realClient = mqttClient0 if feed_id in feeds_of_client[0] else mqttClient1
+            realClient = User.mqttClient0 if feed_id in feeds_of_client[0] else User.mqttClient1
             realClient.subscribe(feed_id)
             return jsonify({"status": "true", "msg": "Feed {0} subscribed successfully".format(feed_id)}), 200
         return jsonify({"error": "Not authorized"}), 400
 
     @staticmethod
     def unsubscribeFeed(feed_id):
-        if 'logged_in' in session and session['logged_in'] == True:
-            realClient = mqttClient0 if feed_id in feeds_of_client[0] else mqttClient1
+        if 'logged_in' in session and session['logged_in'] is True:
+            realClient = User.mqttClient0 if feed_id in feeds_of_client[0] else User.mqttClient1
             realClient.unsubscribe(feed_id)
             return jsonify({"status": "true", "msg": "Feed {0} unsubscribed successfully".format(feed_id)}), 200
         return jsonify({"error": "Not authorized"}), 400
