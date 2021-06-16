@@ -25,26 +25,10 @@ LIGHT_FEED = 'bk-iot-light'
 LCD_FEED = 'bk-iot-lcd'
 RELAY_FEED = 'bk-iot-relay'
 DHT11_FEED = 'bk-iot-temp-humid'
-#all_feed_ids = [LED_FEED,SOIL_FEED,LIGHT_FEED,LCD_FEED,RELAY_FEED,DHT11_FEED]
 feed_pub =[LED_FEED, LCD_FEED, RELAY_FEED]
 feeds_of_client = [[LED_FEED,SOIL_FEED,LCD_FEED,DHT11_FEED],[LIGHT_FEED,RELAY_FEED]]
 ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
-# ------------------------------- MQTT Setups---------------------------------------------------------------
-
-#--------------------------------Data prepare-------------------------------------------------------
-# #X = temp-humid
-# data_for_DHT11 = {"id": "7", "name": "TEMP-HUMID", "data": "X", "unit": "*C-%"}
-# # X = 0 tat , X = 1 mo
-# data_for_RELAY = {"id": "11", "name": "RELAY", "data": "X", "unit": ""}
-# # INPUT:  X<100 toi, X>100 sang
-# data_for_LIGHT = {"id": "13", "name": "LIGHT", "data": "X", "unit": ""}
-# # X = 0 – OFF, X = 1 – RED,X = 2 – BLUE
-# data_for_LED = {"id": "1", "name": "LED", "data": "X", "unit": ""}
-# #X= 0 - 1023 ||  X < 100: Dry, X > 100: Đất ẩm
-# data_for_SOIL = {"id":"9","name":"SOIL ","data":"X","unit":""}
-# # X = Chuoi hien tren LCD (toi da 12 characters)
-# data_for_LCD = {"id": "3","name": "LCD","data": "X","unit": ""}
 #--------------------------------------Function for MQTT-----------------------------------------------------------------------
 def wake_up_MQTT(client):
     client.on_connect = connected
@@ -52,7 +36,6 @@ def wake_up_MQTT(client):
     client.on_message = message
     client.connect()
     client.loop_background()
-
 def connected(client):
     [client.subscribe(x) for x in feeds_of_client[0]] if client is User.mqttClient0 else [client.subscribe(x) for x in feeds_of_client[1]]
 
@@ -67,7 +50,6 @@ def message(client, feed_id, payload):
         global_data[feed_id] += [json.loads(payload)]  # json to dict
     except KeyError:
         global_data[feed_id] = [json.loads(payload)]  # json to dict
-    print(global_data)
 
 def get_mqtt(feed_id):
     global global_data
@@ -141,7 +123,7 @@ class User:
         data_for_LED = {"id": "1", "name": "LED", "data": "X", "unit": ""}
         data_for_LCD = {"id": "3", "name": "LCD", "data": "X", "unit": ""}
         if feed_id not in feed_pub:
-            return jsonify({"error": "You cant publish to this feed"}), 400
+            return jsonify({"error": "You cannot publish to this feed"}), 400
         dataToPublish = None
         if 'logged_in' in session and session['logged_in'] is True:
             value = request.get_json()['value']
@@ -237,8 +219,6 @@ def getDataOfTopic(feed_id):
         temp,humid = data.split('-')
         return jsonify({"status":"true", "value":{"temp":temp,"humid":humid}}),200
 
-
-
 @app.route('/api/account/<feed_id>/seven_data', methods=['GET'])
 def getSevenNearestValue(feed_id):
     dict_data = []
@@ -293,7 +273,6 @@ def getAllSensorsLatestData():
     dict_data = []
     client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
     client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
-
     for topic in feeds_of_client[1]:
         data = client1.receive(topic)[3]
 
