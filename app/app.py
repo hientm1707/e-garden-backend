@@ -4,7 +4,8 @@ from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 # from form import LoginForm
 from werkzeug.utils import redirect
-from process_data import publish_data, receive_new_data, get_mqtt, global_data
+from process_data import publish_data, receive_new_data, get_mqtt, global_data, getSevenNearestValue
+
 import json
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
@@ -124,17 +125,20 @@ def send_data(topic_id):
 def get_new_data():
     return receive_new_data()
 
+@app.route('/api/account/<feed_id>/seven_data', methods=['GET'])
+def get_seven_data(feed_id):
+    return getSevenNearestValue(feed_id)
 # @app.route("/mqtt", methods=['GET']) 
 # def getting_data():
 #     return get_mqtt('bk-iot-led')
 
-@socketio.on('message')
-def handle_message(data):
-    print('received message: ' + data)
+# @socketio.on('message')
+# def handle_message(data):
+#     print('received message: ' + data)
 
-@socketio.on('json')
-def handle_json(json):
-    print('received json: ' + str(json))
+# @socketio.on('json')
+# def handle_json(json):
+#     print('received json: ' + str(json))
 
 @socketio.on('connection')
 def handle_connection(json):
@@ -146,7 +150,7 @@ def handle_client_listen_data(data=None):
     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-led')) 
 
 @socketio.on('bk-iot-soil')
-def handle_client_listen_data(data=None):
+def handle_client_listen_data(data=None): 
     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-soil')) 
 
 @socketio.on('bk-iot-light')
