@@ -184,7 +184,7 @@ def getSevenNearestValue(feed_id):
     # topic0 = ['bk-iot-led', 'bk-iot-soil', 'bk-iot-lcd', 'bk-iot-temp-humid']
     
     client = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1) if feed_id in topic1 else Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
-    
+
     data = client.data(feed_id)[:7]
     if data:
         for i in data:
@@ -223,11 +223,8 @@ def get_mqtt(topic_name):
             temp,humid = value['data'].split('-')
             itemDict = {
                 'id': topic_name,
-                'value': {
-                    'temp': temp,
-                    'humid': humid
+                'value': {'temp': temp,'humid': humid}
                 }
-            }
         else: # if value is None
             itemDict = {
                 'id': topic_name,
