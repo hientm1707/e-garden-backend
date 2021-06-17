@@ -14,7 +14,7 @@ app = Flask(__name__)
 app.secret_key = "Secret Key"
 mgClient = MongoClient(configuration['mongoRemote'])
 db = mgClient.get_database('DoAnDaNganh')
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=True )
 # --------------------------------------GlabalData------------------------
 context = {'temp_rate': 40, 'humidity_rate': 65}
 global_data = {}
@@ -30,12 +30,7 @@ feeds_of_client = [[LED_FEED,SOIL_FEED,LCD_FEED,DHT11_FEED],[LIGHT_FEED,RELAY_FE
 ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 #--------------------------------------Function for MQTT-----------------------------------------------------------------------
-def wake_up_MQTT(client):
-    client.on_connect = connected
-    client.on_disconnect = disconnected
-    client.on_message = message
-    client.connect()
-    client.loop_background()
+
 def connected(client):
     [client.subscribe(x) for x in feeds_of_client[0]] if client is User.mqttClient0 else [client.subscribe(x) for x in feeds_of_client[1]]
 
@@ -69,6 +64,13 @@ def get_mqtt(feed_id):
     else:
         return json.dumps({"id": feed_id, "value": value[-1]['data'] if value else None})
 
+
+def wake_up_MQTT(client):
+    client.on_connect = connected
+    client.on_disconnect = disconnected
+    client.on_message = message
+    client.connect()
+    client.loop_background()
 # --------------------------------------------User-------------------------------------------------
 
 class User:
