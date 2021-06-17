@@ -9,7 +9,7 @@ from process_data import publish_data, receive_new_data, get_mqtt, global_data, 
 import json
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
-socketio = SocketIO(app,cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=True )
 class User:
     def __init__(self,id,username,password = None , email = None):
         self._id = id
