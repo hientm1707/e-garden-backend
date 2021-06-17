@@ -252,18 +252,16 @@ def getSevenNearestValue(feed_id):
             return jsonify(return_value),200
         else:
             return_value = {"data": None, "status":"False", "msg": "Feed has no data"}
-            return jsonify(return_value),404
+            return jsonify(return_value),400
 
     elif feed_id in feeds_of_client[0]:
         data = client0.data(feed_id)[:7]
         if data:
             for i in data:
-                print(i,type(i)) #
                 try:
                     value = json.loads(i[3])['data']
                 except TypeError:
                     value = i[3]
-
                 if feed_id == 'bk-iot-temp-humid':
                     temp,humid = value.split('-')
                     value = { 'temp':temp, 'humid':humid}
@@ -275,38 +273,34 @@ def getSevenNearestValue(feed_id):
             return jsonify(return_value),200
         else:
             return_value = {"data": None, "status":"false", "msg": "Feed has no data"}
-            return jsonify(return_value),404
+            return jsonify(return_value),400
     else:
         return_value = {"data": None, "status":"false", "msg": "Feed not exist"}
-        return jsonify(return_value),404
+        return jsonify(return_value),400
 
 @app.route('/api/account/data', methods=['GET'])
 def getAllSensorsLatestData():
     dict_data = []
     client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
     client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
-    for topic in feeds_of_client[1]:
-        data = client1.receive(topic)[3]
-
+    for feed in feeds_of_client[1]:
+        data = client1.receive(feed)[3]
         dict_data += [{
-            "id": topic,
+            "id": feed,
             "value": json.loads(data)['data'] if data is not None else None
         }]
-
-    for topic in feeds_of_client[0]:
-        data = client0.receive(topic)[3]
+    for feed in feeds_of_client[0]:
+        data = client0.receive(feed)[3]
         value = json.loads(data)['data'] if data is not None else None
-        if topic == 'bk-iot-temp-humid':
+        if feed == 'bk-iot-temp-humid':
             if value:
                 temp, humid = value.split('-')
                 value = {'temp': temp, 'humid': humid}
-
         dict_data += [{
-            "id": topic,
+            "id": feed,
             "value": value
         }]
-    return_value = {"data": dict_data, "status": "true"}
-    return jsonify(return_value), 200
+    return jsonify({"data": dict_data, "status": "true"}), 200
 
 @app.route('/api/account/humidity_warning', methods=['GET', 'PUT'])
 def modifyHumidityRate():
