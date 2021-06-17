@@ -1,11 +1,13 @@
 #------------MYSQL-------------
-mysql_host: 'localhost'
-mysql_user: 'root'
-mysql_password: 'minhhien37'
-mysql_db: 'flaskapp'
-mysql_secretkey: 'this_is_a_secret_key'
-mysql_uri: 'mysql://root:minhhien37@localhost/crud'
-
-#------------MongoDBCloud--------------
+#mysql_host: 'localhost'
+#mysql_user: 'root'
+#mysql_password: 'minhhien37'
+#mysql_db: 'flaskapp'
+#mysql_secretkey: 'this_is_a_secret_key'
+#mysql_uri: 'mysql://root:minhhien37@localhost/crud'
+#
+##------------MongoDBCloud--------------
 mongoRemote: 'mongodb+srv://minhhien37:minhhien37@sandbox.wfgv5.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
-tlsPath: 'C:/Users/hien.tran/Documents/tls/cert.pem'
+sender_username: 'theiotdudes@gmail.com'
+sender_password: 'doandanganh2021'
+

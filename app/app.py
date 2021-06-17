@@ -10,13 +10,15 @@ import sys
 with open("db.yaml", "r") as ymlfile:
     configuration = yaml.load(ymlfile, Loader=yaml.FullLoader)
 from pymongo import MongoClient
+import ssl
+context = ssl.create_default_context()
 app = Flask(__name__)
 app.secret_key = "Secret Key"
 mgClient = MongoClient(configuration['mongoRemote'])
 db = mgClient.get_database('DoAnDaNganh')
 socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=True )
 # --------------------------------------GlabalData------------------------
-context = {'temp_rate': 40, 'humidity_rate': 65}
+global_ctx = {'temp_rate': 40, 'humidity_rate': 65}
 global_data = {}
 #---------------------------------------FEEDS--------------------------------
 LED_FEED = 'bk-iot-led'
@@ -29,6 +31,12 @@ feed_pub =[LED_FEED, LCD_FEED, RELAY_FEED]
 feeds_of_client = [[LED_FEED,SOIL_FEED,LCD_FEED,DHT11_FEED],[LIGHT_FEED,RELAY_FEED]]
 ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
 ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
+
+#----------------------------------------SEND EMAIL --------------------------------------------------------------------
+from smtp import *
+SENDER_USERNAME = configuration['sender_username']
+SENDER_PASSWORD = configuration['sender_password']
+RECEIVER = 'minhhien1772000@gmail.com'
 #--------------------------------------Function for MQTT-----------------------------------------------------------------------
 
 def connected(client):
@@ -40,11 +48,18 @@ def disconnected(client):
 
 def message(client, feed_id, payload):
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
+    payloadDict = json.loads(payload)
+    if feed_id == DHT11_FEED:
+        temp, humid = payloadDict['data'].split('-')
+        if int(temp) >= global_ctx['temp_rate']:
+            sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='ALERT!\n\n Your garden temperature is too high!!!!')
+        if int(humid) <= global_ctx['humidity_rate']:
+            sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='ALERT!\n\n Your garden humidity is too low!!!!!!')
     global global_data
     try:
-        global_data[feed_id] += [json.loads(payload)]  # json to dict
+        global_data[feed_id] += [payloadDict]  # json to dict
     except KeyError:
-        global_data[feed_id] = [json.loads(payload)]  # json to dict
+        global_data[feed_id] = [payloadDict]  # json to dict
 
 def get_mqtt(feed_id):
     global global_data
@@ -64,7 +79,6 @@ def get_mqtt(feed_id):
     else:
         return json.dumps({"id": feed_id, "value": value[-1]['data'] if value else None})
 
-
 def wake_up_MQTT(client):
     client.on_connect = connected
     client.on_disconnect = disconnected
@@ -81,7 +95,6 @@ class User:
         del user['password']
         session['logged_in'] = True
         session['user'] = user
-        # Create an MQTT client instance.
         User.mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
         User.mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
         wake_up_MQTT(User.mqttClient0);
@@ -106,7 +119,7 @@ class User:
         if db.User.insert_one(user):
             return self.start_session(user)
 
-        return jsonify({"error": "Signup fai led"}), 400
+        return jsonify({"error": "Signup failed"}), 400
 
     def signout(self):
         if session:
@@ -180,7 +193,6 @@ class User:
             realClient.unsubscribe(feed_id)
             return jsonify({"status": "true", "msg": "Feed {0} unsubscribed successfully".format(feed_id)}), 200
         return jsonify({"error": "Not authorized"}), 400
-
 #----------------------------------------ROUTES------------------------------------------------
 @app.route('/', methods=['GET'])
 def homepage():
@@ -309,11 +321,11 @@ def modifyHumidityRate():
         if not value:
             return jsonify({"status": "false", "msg": "Invalid body format"}), 400
         if isinstance(value, int):
-            context['humidity_rate'] = value
+            global_ctx['humidity_rate'] = value
             return jsonify({"status": "true"}), 200
         return jsonify({"error": "Invalid input format"}), 400
     else:
-        return jsonify({"rate": context['humidity_rate'], "status": "true"}), 200
+        return jsonify({"rate": global_ctx['humidity_rate'], "status": "true"}), 200
 
 @app.route('/api/account/temp_warning', methods=['GET', 'PUT'])
 def modifyTempRate():
@@ -322,11 +334,11 @@ def modifyTempRate():
         if not value:
             return jsonify({"status": "false", "msg": "Invalid body format"}), 400
         if isinstance(value, int):
-            context['temp_rate'] = value
+            global_ctx['temp_rate'] = value
             return jsonify({"status": "true"}), 200
         return jsonify({"error": "Invalid input format"}), 400
     else:
-        return jsonify({"rate": context['temp_rate'], "status": "true"}), 200
+        return jsonify({"rate": global_ctx['temp_rate'], "status": "true"}), 200
 
 
 @socketio.on('bk-iot-led')
