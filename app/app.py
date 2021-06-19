@@ -27,6 +27,7 @@ LIGHT_FEED = 'bk-iot-light'
 LCD_FEED = 'bk-iot-lcd'
 RELAY_FEED = 'bk-iot-relay'
 DHT11_FEED = 'bk-iot-temp-humid'
+all_feeds = [LED_FEED,LCD_FEED,RELAY_FEED,SOIL_FEED,DHT11_FEED,LIGHT_FEED]
 feed_pub =[LED_FEED, LCD_FEED, RELAY_FEED]
 feeds_of_client = [[LED_FEED,SOIL_FEED,LCD_FEED,DHT11_FEED],[LIGHT_FEED,RELAY_FEED]]
 ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
@@ -55,27 +56,30 @@ def message(client, feed_id, payload):
             sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='ALERT!\n\n Your garden temperature is too high!!!! Fix it')
         if int(humid) <= global_ctx['humidity_rate']:
             sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='ALERT!\n\n Your garden humidity is too low!!!!!! Fix it')
-    socketio.emit('server-send-mqtt', payload)
-    # global global_data
-    # try:
-    #     global_data[feed_id] += [payloadDict]  # json to dict
-    # except KeyError:
-    #     global_data[feed_id] = [payloadDict]  # json to dict
 
-# def get_mqtt(feed_id):
-#     global global_data
-#     value = None
-#     try:
-#         value = global_data[feed_id]
-#     except KeyError:
-#         value = None
-#     itemDict = {}
-#     if feed_id == DHT11_FEED:
-#         value = value[-1]  # last dict
-#         temp, humid = value['data'].split('-')
-#         return json.dumps({"id": feed_id, "value": {"temp": temp, "humid": humid}}) if value else json.dumps({"id": DHT11_FEED,"value": {"temp": None,"humid": None}})
-#     else:
-#         return json.dumps({"id": feed_id, "value": value[-1]['data'] if value else None})
+    global global_data
+    try:
+        global_data[feed_id] += [payloadDict]  # json to dict
+    except KeyError:
+        global_data[feed_id] = [payloadDict]  # json to dict
+
+def get_mqtt(feed_id):
+    global global_data
+    value = None
+    try:
+        value = global_data[feed_id]
+    except KeyError:
+        value = None
+    itemDict = {}
+    if feed_id == 'bk-iot-temp-humid':
+        if value:
+            value = value[-1]  # last dict
+            temp, humid = value['data'].split('-')
+            return json.dumps({"id": feed_id, "value": {"temp": temp, "humid": humid}})
+        else:  # if value is None
+            return json.dumps({"id": feed_id, "value": {"temp": None, "humid": None}})
+    else:
+        return json.dumps({"id": feed_id, "value": value[-1]['data'] if value else None})
 
 def wake_up_MQTT(client):
     client.on_connect = connected
@@ -368,8 +372,10 @@ def modifyTempRate():
 # @socketio.on(DHT11_FEED)
 # def handle_client_listen_data(data=None):
 #     socketio.emit('server-send-mqtt', get_mqtt(DHT11_FEED))
+[socketio.emit('server-send-mqtt', get_mqtt(feed)) for feed in all_feeds]
+
 
 if __name__ == "__main__":
     app.run(debug=True)
-    #socketio.run(app, debug=True)
+    socketio.run(app,port=6000,debug=True)
     ##
