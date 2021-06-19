@@ -11,7 +11,7 @@ with open("db.yaml", "r") as ymlfile:
     configuration = yaml.load(ymlfile, Loader=yaml.FullLoader)
 from pymongo import MongoClient
 import ssl
-context = ssl.create_default_context()
+# context = ssl.create_default_context()
 app = Flask(__name__)
 app.secret_key = "Secret Key"
 mgClient = MongoClient(configuration['mongoRemote'])
@@ -52,32 +52,30 @@ def message(client, feed_id, payload):
     if feed_id == DHT11_FEED:
         temp, humid = payloadDict['data'].split('-')
         if int(temp) >= global_ctx['temp_rate']:
-            sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='ALERT!\n\n Your garden temperature is too high!!!!')
+            sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='ALERT!\n\n Your garden temperature is too high!!!! Fix it')
         if int(humid) <= global_ctx['humidity_rate']:
-            sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='ALERT!\n\n Your garden humidity is too low!!!!!!')
-    global global_data
-    try:
-        global_data[feed_id] += [payloadDict]  # json to dict
-    except KeyError:
-        global_data[feed_id] = [payloadDict]  # json to dict
+            sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='ALERT!\n\n Your garden humidity is too low!!!!!! Fix it')
+    socketio.emit('server-send-mqtt', payload)
+    # global global_data
+    # try:
+    #     global_data[feed_id] += [payloadDict]  # json to dict
+    # except KeyError:
+    #     global_data[feed_id] = [payloadDict]  # json to dict
 
-def get_mqtt(feed_id):
-    global global_data
-    value = None
-    try:
-        value = global_data[feed_id]
-    except KeyError:
-        value = None
-    itemDict = {}
-    if feed_id == 'bk-iot-temp-humid':
-        if value:
-            value = value[-1]  # last dict
-            temp, humid = value['data'].split('-')
-            return json.dumps({"id": feed_id, "value": {"temp": temp, "humid": humid}})
-        else:  # if value is None
-            return json.dumps({"id": feed_id,"value": {"temp": None,"humid": None}})
-    else:
-        return json.dumps({"id": feed_id, "value": value[-1]['data'] if value else None})
+# def get_mqtt(feed_id):
+#     global global_data
+#     value = None
+#     try:
+#         value = global_data[feed_id]
+#     except KeyError:
+#         value = None
+#     itemDict = {}
+#     if feed_id == DHT11_FEED:
+#         value = value[-1]  # last dict
+#         temp, humid = value['data'].split('-')
+#         return json.dumps({"id": feed_id, "value": {"temp": temp, "humid": humid}}) if value else json.dumps({"id": DHT11_FEED,"value": {"temp": None,"humid": None}})
+#     else:
+#         return json.dumps({"id": feed_id, "value": value[-1]['data'] if value else None})
 
 def wake_up_MQTT(client):
     client.on_connect = connected
@@ -107,6 +105,7 @@ class User:
             "_id": uuid.uuid4().hex,
             "username": request.get_json()['username'],
             "password": request.get_json()['password'],
+           # "email": request.get_json()['email']
         }
 
         # Encrypt the password
@@ -339,36 +338,36 @@ def modifyTempRate():
         return jsonify({"error": "Invalid input format"}), 400
     else:
         return jsonify({"rate": global_ctx['temp_rate'], "status": "true"}), 200
-
-
-@socketio.on('bk-iot-led')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-led'))
-
-
-@socketio.on('bk-iot-soil')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-soil'))
-
-
-@socketio.on('bk-iot-light')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-light'))
-
-
-@socketio.on('bk-iot-lcd')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-lcd'))
-
-
-@socketio.on('bk-iot-relay')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-relay'))
-
-
-@socketio.on('bk-iot-temp-humid')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-temp-humid'))
+#
+#
+# @socketio.on(LED_FEED)
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt(LED_FEED))
+#
+#
+# @socketio.on(SOIL_FEED)
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt(SOIL_FEED))
+#
+#
+# @socketio.on(LIGHT_FEED)
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt(LIGHT_FEED))
+#
+#
+# @socketio.on(LCD_FEED)
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt(LCD_FEED))
+#
+#
+# @socketio.on(RELAY_FEED)
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt(RELAY_FEED))
+#
+#
+# @socketio.on(DHT11_FEED)
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt(DHT11_FEED))
 
 if __name__ == "__main__":
     app.run(debug=True)
