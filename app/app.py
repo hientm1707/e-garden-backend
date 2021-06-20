@@ -1,4 +1,6 @@
 # ----------------------Base setup-----------------------
+import json
+
 from Adafruit_IO import Client, RequestError
 from flask import Flask, jsonify, request, session, make_response
 import yaml
@@ -48,6 +50,8 @@ def disconnected(client):
 
 def message(client, feed_id, payload):
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
+    socketio.emit('message',json.dumps(payload))
+    socketio.emit('server-send-mqtt',json.dumps(payload))
     payloadDict = json.loads(payload)
     if feed_id == DHT11_FEED:
         temp, humid = payloadDict['data'].split('-')
@@ -341,36 +345,36 @@ def modifyTempRate():
         return jsonify({"rate": global_ctx['temp_rate'], "status": "true"}), 200
 
 
-@socketio.on('bk-iot-led')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-led'))
-
-
-@socketio.on('bk-iot-soil')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-soil'))
-
-
-@socketio.on('bk-iot-light')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-light'))
-
-
-@socketio.on('bk-iot-lcd')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-lcd'))
-
-
-@socketio.on('bk-iot-relay')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-relay'))
-
-
-@socketio.on('bk-iot-temp-humid')
-def handle_client_listen_data(data=None):
-    socketio.emit('server-send-mqtt', get_mqtt('bk-iot-temp-humid'))
+# @socketio.on('bk-iot-led')
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-led'))
+#
+#
+# @socketio.on('bk-iot-soil')
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-soil'))
+#
+#
+# @socketio.on('bk-iot-light')
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-light'))
+#
+#
+# @socketio.on('bk-iot-lcd')
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-lcd'))
+#
+#
+# @socketio.on('bk-iot-relay')
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-relay'))
+#
+#
+# @socketio.on('bk-iot-temp-humid')
+# def handle_client_listen_data(data=None):
+#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-temp-humid'))
 
 if __name__ == "__main__":
-    app.run(debug=True)
-    #socketio.run(app, debug=True)
+    #app.run(debug=True)
+    socketio.run(app,port = 413, debug=True)
     ##
