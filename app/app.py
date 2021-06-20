@@ -50,8 +50,8 @@ def disconnected(client):
 
 def message(client, feed_id, payload):
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
-    socketio.emit('message',json.dumps(payload))
-    socketio.emit('server-send-mqtt',json.dumps(payload))
+    socketio.emit('message',payload)
+    socketio.emit('server-send-mqtt',payload)
     payloadDict = json.loads(payload)
     if feed_id == DHT11_FEED:
         temp, humid = payloadDict['data'].split('-')
