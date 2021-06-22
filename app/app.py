@@ -1,6 +1,5 @@
 # ----------------------Base setup-----------------------
 import json
-
 from Adafruit_IO import Client, RequestError
 from flask import Flask, jsonify, request, session, make_response
 import yaml
@@ -23,22 +22,12 @@ socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=
 global_ctx = {'temp_rate': 40, 'humidity_rate': 65}
 global_data = {}
 #---------------------------------------FEEDS--------------------------------
-LED_FEED = 'bk-iot-led'
-SOIL_FEED = 'bk-iot-soil'
-LIGHT_FEED = 'bk-iot-light'
-LCD_FEED = 'bk-iot-lcd'
-RELAY_FEED = 'bk-iot-relay'
-DHT11_FEED = 'bk-iot-temp-humid'
-feed_pub =[LED_FEED, LCD_FEED, RELAY_FEED]
-feeds_of_client = [[LED_FEED,SOIL_FEED,LCD_FEED,DHT11_FEED],[LIGHT_FEED,RELAY_FEED]]
-ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
-ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1 = 'trminhhien17', 'aio_Phfr33tNoyth68Tg6gWsVJXNkVbA'
-
+from feeds import *
 #----------------------------------------SEND EMAIL --------------------------------------------------------------------
 from smtp import *
 SENDER_USERNAME = configuration['sender_username']
 SENDER_PASSWORD = configuration['sender_password']
-RECEIVER = 'minhhien1772000@gmail.com'
+RECEIVERS = ['minhhien1772000@gmail.com', 'minhtri.tk23@gmail.com']
 #--------------------------------------Function for MQTT-----------------------------------------------------------------------
 
 def connected(client):
@@ -50,15 +39,19 @@ def disconnected(client):
 
 def message(client, feed_id, payload):
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
-    socketio.emit('message',payload)
-    socketio.emit('server-send-mqtt',payload)
+    # socketio.emit('message',payload)
+    # socketio.emit('server-send-mqtt',payload)
     payloadDict = json.loads(payload)
     if feed_id == DHT11_FEED:
         temp, humid = payloadDict['data'].split('-')
         if int(temp) >= global_ctx['temp_rate']:
-            sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='ALERT!\n\n Your garden temperature is too high!!!!')
+            SUBJECT = 'TEMPERATURE WARNING!'
+            MESSAGE = 'Your garden is too hot!!!!\n\nPLEASE TAKE ACTION!!'
+            [sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='Subject: {}\n\n{}'.format(SUBJECT, MESSAGE))for RECEIVER in RECEIVERS]
         if int(humid) <= global_ctx['humidity_rate']:
-            sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='ALERT!\n\n Your garden humidity is too low!!!!!!')
+            SUBJECT = 'HUMIDITY WARNING!'
+            MESSAGE = 'Your garden is too dry, it needs watering!!!!\n\nPLEASE TAKE ACTION!!'
+            [sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='Subject: {}\n\n{}'.format(SUBJECT, MESSAGE)) for RECEIVER in RECEIVERS]
     global global_data
     try:
         global_data[feed_id] += [payloadDict]  # json to dict
@@ -345,11 +338,11 @@ def modifyTempRate():
         return jsonify({"rate": global_ctx['temp_rate'], "status": "true"}), 200
 
 
-# @socketio.on('bk-iot-led')
-# def handle_client_listen_data(data=None):
-#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-led'))
-#
-#
+@socketio.on('message')
+def handle_client_listen_data():
+    socketio.emit('message', "123")
+
+
 # @socketio.on('bk-iot-soil')
 # def handle_client_listen_data(data=None):
 #     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-soil'))
