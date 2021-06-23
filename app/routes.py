@@ -45,12 +45,15 @@ def getDataOfTopic(feed_id):
             400
         )
         response.headers["Content-Type"] = "application/json"
+        del restClient
         return response
     data = json.loads(restClient.receive(feed.key)[3])['data']
     if feed.key != DHT11_FEED:
+        del restClient
         return jsonify({"status": "true", "value": data}), 200
     else:
         temp,humid = data.split('-')
+        del restClient
         return jsonify({"status":"true", "value":{"temp":temp,"humid":humid}}),200
 
 @app.route('/api/account/<feed_id>/seven_data', methods=['GET'])
@@ -71,9 +74,13 @@ def getSevenNearestValue(feed_id):
                     "value": value
                 }]
             return_value = {"data": dict_data, "status":"true"}
+            del client0
+            del client1
             return jsonify(return_value),200
         else:
             return_value = {"data": None, "status":"False", "msg": "Feed has no data"}
+            del client0
+            del client1
             return jsonify(return_value),400
 
     elif feed_id in feeds_of_client[0]:
@@ -92,12 +99,18 @@ def getSevenNearestValue(feed_id):
                     "value": value
                 }]
             return_value = {"data": dict_data, "status":"true"}
+            del client0
+            del client1
             return jsonify(return_value),200
         else:
             return_value = {"data": None, "status":"false", "msg": "Feed has no data"}
+            del client0
+            del client1
             return jsonify(return_value),400
     else:
         return_value = {"data": None, "status":"false", "msg": "Feed not exist"}
+        del client0
+        del client1
         return jsonify(return_value),400
 
 @app.route('/api/account/data', methods=['GET'])
@@ -122,6 +135,8 @@ def getAllSensorsLatestData():
             "id": feed,
             "value": value
         }]
+    del client0
+    del client1
     return jsonify({"data": dict_data, "status": "true"}), 200
 
 @app.route('/api/account/humidity_warning', methods=['GET', 'PUT'])
