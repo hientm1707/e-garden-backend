@@ -7,7 +7,7 @@ import uuid
 from flask_socketio import SocketIO
 from username_and_key import *
 import sys
-with open("db.yaml", "r") as ymlfile:
+with open("config/db.yaml", "r") as ymlfile:
     configuration = yaml.load(ymlfile, Loader=yaml.FullLoader)
 from pymongo import MongoClient
 import ssl
