@@ -1,9 +1,15 @@
 from app import User,app
 from Adafruit_IO import Client, RequestError
-from flask import make_response, jsonify, json, request
+from flask import make_response, jsonify, json, request,session
 from feeds import *
 from globalData import *
 from username_and_key import *
+from datetime import timedelta
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+    app.permanent_session_lifetime = timedelta(minutes=5)
+
 @app.route('/', methods=['GET'])
 def homepage():
     return '<p> ok </p>'

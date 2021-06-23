@@ -8,20 +8,25 @@ import uuid
 from flask_socketio import SocketIO
 from username_and_key import *
 import sys
+import socketio as sio
 with open("config/db.yaml", "r") as ymlfile:
     configuration = yaml.load(ymlfile, Loader=yaml.FullLoader)
 from pymongo import MongoClient
-import ssl
+from logger import logger
 app = Flask(__name__)
 app.secret_key = "Secret Key"
 mgClient = MongoClient(configuration['mongoRemote'])
 db = mgClient.get_database('DoAnDaNganh')
-socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=True )
+socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=True)
+socketioClient = sio.Client()
+logger.info('Created socketio client')
+socketioClient.connect('https://iotdudes-smart-garden.herokuapp.com')
+logger.info('A user connected')
 # --------------------------------------GlabalData------------------------
 from globalData import *
 #---------------------------------------FEEDS--------------------------------
 from feeds import *
-#----------------------------------------SEND EMAIL --------------------------------------------------------------------
+#----------------------------------------SEND EMAAIL --------------------------------------------------------------------
 from smtp import *
 SENDER_USERNAME = configuration['sender_username']
 SENDER_PASSWORD = configuration['sender_password']
@@ -37,8 +42,7 @@ def disconnected(client):
 
 def message(client, feed_id, payload):
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
-    # socketio.emit('message',payload)
-    # socketio.emit('server-send-mqtt',payload)
+    socketioClient.emit('server-send-mqtt', json.loads(payload))
     payloadDict = json.loads(payload)
     if feed_id == DHT11_FEED:
         temp, humid = payloadDict['data'].split('-')
@@ -83,7 +87,6 @@ def wake_up_MQTT(client):
     client.connect()
     client.loop_background()
 
-from routes import *
 # --------------------------------------------User-------------------------------------------------
 
 class User:
@@ -193,13 +196,21 @@ class User:
             realClient.unsubscribe(feed_id)
             return jsonify({"status": "true", "msg": "Feed {0} unsubscribed successfully".format(feed_id)}), 200
         return jsonify({"error": "Not authenticated"}), 400
+
 #----------------------------------------ROUTES------------------------------------------------
+from routes import *
 
+# @socketio.on('message')
+# def handle_client_listen_data():
+#     socketio.emit('message', "123")
 
-@socketio.on('message')
-def handle_client_listen_data():
-    socketio.emit('message', "123")
+@socketio.on('connect')
+def handle_connected_user():
+    logger.info("=======================================A user connected========================================")
 
+@socketio.on('server-send-mqtt')
+def handle_mqtt(message):
+    [socketio.emit('server-send-mqtt',get_mqtt(feed)) for feed in all_feeds]
 
 if __name__ == "__main__":
     #app.run(debug=True)
