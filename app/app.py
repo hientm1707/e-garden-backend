@@ -43,6 +43,7 @@ def disconnected(client):
 def message(client, feed_id, payload):
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
     socketioClient.emit('server-send-mqtt', json.loads(payload))
+    socketio.emit('server-send-mqtt', json.loads(payload)
     payloadDict = json.loads(payload)
     if feed_id == DHT11_FEED:
         temp, humid = payloadDict['data'].split('-')
@@ -200,17 +201,23 @@ class User:
 #----------------------------------------ROUTES------------------------------------------------
 from routes import *
 
-# @socketio.on('message')
-# def handle_client_listen_data():
-#     socketio.emit('message', "123")
-
 @socketio.on('connect')
 def handle_connected_user():
     logger.info("=======================================A user connected========================================")
+    print("=======================================A user connected========================================")
 
 @socketio.on('server-send-mqtt')
 def handle_mqtt(message):
-    [socketio.emit('server-send-mqtt',get_mqtt(feed)) for feed in all_feeds]
+    socketio.emit('server-send-mqtt',message)
+    logger.info("Emiting payload")
+
+@socketioClient.on('connect')
+def handle_connected_user():
+    logger.info("==============================A user connected (SIO CLIENT)========================================")
+
+@socketioClient.on('server-send-mqtt')
+def handle_mqttClient(message):
+    socketioClient.emit('server-send-mqtt',message)
 
 if __name__ == "__main__":
     #app.run(debug=True)
