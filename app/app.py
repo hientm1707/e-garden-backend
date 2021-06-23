@@ -1,4 +1,5 @@
 # ----------------------Base setup-----------------------
+import json
 from Adafruit_IO import MQTTClient
 from flask import Flask, jsonify, request, session
 import yaml
@@ -81,6 +82,8 @@ def wake_up_MQTT(client):
     client.on_message = message
     client.connect()
     client.loop_background()
+
+from routes import *
 # --------------------------------------------User-------------------------------------------------
 
 class User:
@@ -190,7 +193,7 @@ class User:
             return jsonify({"status": "true", "msg": "Feed {0} unsubscribed successfully".format(feed_id)}), 200
         return jsonify({"error": "Not authenticated"}), 400
 #----------------------------------------ROUTES------------------------------------------------
-from routes import *
+
 
 @socketio.on('message')
 def handle_client_listen_data():
