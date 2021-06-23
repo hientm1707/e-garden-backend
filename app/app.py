@@ -66,7 +66,7 @@ def get_mqtt(feed_id):
     except KeyError:
         value = None
     itemDict = {}
-    if feed_id == 'bk-iot-temp-humid':
+    if feed_id == DHT11_FEED:
         if value:
             value = value[-1]  # last dict
             temp, humid = value['data'].split('-')
@@ -98,6 +98,7 @@ class User:
         User.mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
         wake_up_MQTT(User.mqttClient0);
         wake_up_MQTT(User.mqttClient1);
+        User.mqttClient0.publish(LCD_FEED, json.dumps({"id": "3", "name": "LCD", "data": "HI! IOTDUDES", "unit": ""}))
         return jsonify({"status": "true"}), 200
 
     def signup(self):
@@ -199,30 +200,6 @@ class User:
 def handle_client_listen_data():
     socketio.emit('message', "123")
 
-
-# @socketio.on('bk-iot-soil')
-# def handle_client_listen_data(data=None):
-#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-soil'))
-#
-#
-# @socketio.on('bk-iot-light')
-# def handle_client_listen_data(data=None):
-#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-light'))
-#
-#
-# @socketio.on('bk-iot-lcd')
-# def handle_client_listen_data(data=None):
-#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-lcd'))
-#
-#
-# @socketio.on('bk-iot-relay')
-# def handle_client_listen_data(data=None):
-#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-relay'))
-#
-#
-# @socketio.on('bk-iot-temp-humid')
-# def handle_client_listen_data(data=None):
-#     socketio.emit('server-send-mqtt', get_mqtt('bk-iot-temp-humid'))
 
 if __name__ == "__main__":
     #app.run(debug=True)
