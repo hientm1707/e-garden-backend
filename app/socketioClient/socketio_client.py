@@ -13,5 +13,5 @@ def connect():
 def disconnect():
     logger.info('disconnected from server')
 
-sio.connect('https://iotdudes-smart-garden.herokuapp.com')
+sio.connect('https://localhost:413')
 print("haha")

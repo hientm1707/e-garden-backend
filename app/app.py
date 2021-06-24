@@ -1,14 +1,14 @@
 # ----------------------Base setup-----------------------
 import json
+import time
 from Adafruit_IO import MQTTClient
 from flask import Flask, jsonify, request, session
 import yaml
 from passlib.hash import pbkdf2_sha256
 import uuid
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit, send, join_room
 from username_and_key import *
 import sys
-import socketio as sio
 with open("config/db.yaml", "r") as ymlfile:
     configuration = yaml.load(ymlfile, Loader=yaml.FullLoader)
 from pymongo import MongoClient
@@ -18,10 +18,7 @@ app.secret_key = "Secret Key"
 mgClient = MongoClient(configuration['mongoRemote'])
 db = mgClient.get_database('DoAnDaNganh')
 socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=True)
-socketioClient = sio.Client()
-logger.info('Created socketio client')
-socketioClient.connect('https://iotdudes-smart-garden.herokuapp.com')
-logger.info('A user connected')
+from threading import Thread
 # --------------------------------------GlabalData------------------------
 from globalData import *
 #---------------------------------------FEEDS--------------------------------
@@ -42,8 +39,8 @@ def disconnected(client):
 
 def message(client, feed_id, payload):
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
-    socketioClient.emit('server-send-mqtt', json.loads(payload))
     socketio.emit('server-send-mqtt', json.loads(payload))
+
     payloadDict = json.loads(payload)
     if feed_id == DHT11_FEED:
         temp, humid = payloadDict['data'].split('-')
@@ -200,26 +197,65 @@ class User:
 
 #----------------------------------------ROUTES------------------------------------------------
 from routes import *
+thread = None
+
+#----------------------------------------background------------------------------------------------
+@socketio.on('message')
+def handle_message(msg):
+    logger.info(msg)
+
+def background_thread(roomname):
+        while True:
+            socketio.emit('server-send-mqtt',"FUCK YOU",to=roomname)
+            time.sleep(3)
+
+@socketio.on('join')
+def on_join(data):
+    user = data["user"]
+    room = data["room"]
+    join_room(room)
+    global thread
+    if thread is None:
+        thread = Thread(target=background_thread, args=(room,))
+        thread.daemon = True
+        thread.start()
+    emit("server-send-mqtt", "FUCK YOU BITCH", room=room)
+
 
 @socketio.on('connect')
 def handle_connected_user():
     logger.info("=======================================A user connected========================================")
-    print("=======================================A user connected========================================")
+    global global_sids
+    currentSocketId = request.sid
+    logger.info(currentSocketId)
+    global_sids =currentSocketId
+    def background_thread():
+        while True:
+            socketio.emit('server-send-mqtt',json.loads(get_mqtt(feed_id=LED_FEED)),to=global_sids)
+            time.sleep(3)
+    if thread is None:
+        thread = Thread(target=background_thread)
+        thread.daemon = True
+        thread.start()
+    logger.info("OH NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+
+
 
 @socketio.on('server-send-mqtt')
-def handle_mqtt(message):
-    socketio.emit('server-send-mqtt',message)
-    logger.info("Emiting payload")
+def handle_server_send_mqtt(message):
+    global thread
+    if thread is None:
+        thread = socketio.start_background_task(target=background_thread)
 
-@socketioClient.on('connect')
-def handle_connected_user():
-    logger.info("==============================A user connected (SIO CLIENT)========================================")
 
-@socketioClient.on('server-send-mqtt')
-def handle_mqttClient(message):
-    socketioClient.emit('server-send-mqtt',message)
+@socketio.on('disconnect')
+def handle_disconnected_user():
+    logger.info("=======================================A user DISCONNECTED========================================")
 
-if __name__ == "__main__":
-    #app.run(debug=True)
+if __name__=='__main__':
+    #[socketio.start_background_task(handle_mqtt("haha"), debug=True) for feed in all_feeds]
     socketio.run(app,port = 413, debug=True)
+
+
+
 
