@@ -229,6 +229,7 @@ def handle_connected_user():
     currentSocketId = request.sid
     logger.info(currentSocketId)
     global_sids =currentSocketId
+    global thread
     def background_thread():
         while True:
             socketio.emit('server-send-mqtt',json.loads(get_mqtt(feed_id=LED_FEED)),to=global_sids)
