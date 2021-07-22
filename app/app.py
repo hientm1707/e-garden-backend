@@ -23,12 +23,19 @@ from threading import Thread
 from globalData import *
 #---------------------------------------FEEDS--------------------------------
 from feeds import *
-#----------------------------------------SEND EMAAIL --------------------------------------------------------------------
+#----------------------------------------SEND EMAAIL -------------------------------------------------------------------
 from smtp import *
 SENDER_USERNAME = configuration['sender_username']
 SENDER_PASSWORD = configuration['sender_password']
 RECEIVERS = configuration['receivers']
-#--------------------------------------Function for MQTT-----------------------------------------------------------------------
+#============================================ LOGGING =================================================================
+def writeLogToDatabase(username,msg):
+    response ={
+        "user" :username,
+        "action": msg
+    }
+    db.LOGS.insert_one(response)
+#--------------------------------------Function for MQTT----------------------------------------------------------------
 
 def connected(client):
     [client.subscribe(x) for x in feeds_of_client[0]] if client is User.mqttClient0 else [client.subscribe(x) for x in feeds_of_client[1]]
@@ -214,6 +221,12 @@ class User:
 #----------------------------------------ROUTES------------------------------------------------
 from routes import *
 thread = None
+
+
+@app.route('/api/account/logs', methods=['GET'])
+def getLogs():
+    db.LOGS.find({})
+
 
 #----------------------------------------background------------------------------------------------
 @socketio.on('message')
