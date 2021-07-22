@@ -51,14 +51,21 @@ def getDataOfTopic(feed_id):
         response.headers["Content-Type"] = "application/json"
         del restClient
         return response
-    data = json.loads(restClient.receive(feed.key)[3])['data']
-    if feed.key != DHT11_FEED:
-        del restClient
-        return jsonify({"status": "true", "value": data}), 200
+    #data = restClient.receive(feed.key)[3]
+    listData= restClient.data(feed_id)
+    if listData:
+        realData = json.loads(listData[0][3])['data']
+        print("======================================YES WE GOT SOME DATA===========================================")
+        if feed.key != DHT11_FEED:
+            del restClient
+            return jsonify({"status": "true", "value": realData}), 200
+        else:
+            temp,humid = realData.split('-')
+            del restClient
+            return jsonify({"status":"true", "value":{"temp":temp,"humid":humid}}),200
     else:
-        temp,humid = data.split('-')
-        del restClient
-        return jsonify({"status":"true", "value":{"temp":temp,"humid":humid}}),200
+        print("======================================NO DATA AVAILABLE===========================================")
+        return jsonify({"status": "false", "msg": "No feed available at the moment on this feed"}), 200
 
 @app.route('/api/account/<feed_id>/seven_data', methods=['GET'])
 def getSevenNearestValue(feed_id):
