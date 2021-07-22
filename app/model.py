@@ -1,41 +1,20 @@
-# ----------------------Base setup-----------------------
 import json
-import time
+from flask import session, request, jsonify
 from Adafruit_IO import MQTTClient
-from flask import Flask, jsonify, request, session
-import yaml
+from app import *
 from passlib.hash import pbkdf2_sha256
 import uuid
-from flask_socketio import SocketIO, emit, send, join_room
-from username_and_key import *
 import sys
-with open("config/db.yaml", "r") as ymlfile:
-    configuration = yaml.load(ymlfile, Loader=yaml.FullLoader)
-from pymongo import MongoClient
-from logger import logger
-app = Flask(__name__)
-app.secret_key = "Secret Key"
-mgClient = MongoClient(configuration['mongoRemote'])
-db = mgClient.get_database('DoAnDaNganh')
-socketio = SocketIO(app, cors_allowed_origins="*", engineio_logger=True, logger=True)
-from threading import Thread
-# --------------------------------------GlabalData------------------------
-from globalData import *
-#---------------------------------------FEEDS--------------------------------
+from app.globalData import *
+
 from feeds import *
-#----------------------------------------SEND EMAAIL -------------------------------------------------------------------
-from smtp import *
-SENDER_USERNAME = configuration['sender_username']
-SENDER_PASSWORD = configuration['sender_password']
-RECEIVERS = configuration['receivers']
-#============================================ LOGGING =================================================================
+
 def writeLogToDatabase(username,msg):
     response ={
         "user" :username,
         "action": msg
     }
     db.LOGS.insert_one(response)
-#--------------------------------------Function for MQTT----------------------------------------------------------------
 
 def connected(client):
     [client.subscribe(x) for x in feeds_of_client[0]] if client is User.mqttClient0 else [client.subscribe(x) for x in feeds_of_client[1]]
@@ -46,7 +25,6 @@ def disconnected(client):
 
 def message(client, feed_id, payload):
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
-    socketio.emit('server-send-mqtt', json.loads(payload))
     payloadDict = json.loads(payload)
     if feed_id == DHT11_FEED:
         temp, humid = payloadDict['data'].split('-')
@@ -92,8 +70,6 @@ def wake_up_MQTT(client):
     client.on_message = message
     client.connect()
     client.loop_background()
-# --------------------------------------------User-------------------------------------------------
-
 class User:
     #Static objects
     mqttClient0 = None
@@ -104,8 +80,8 @@ class User:
         session['user'] = user
         User.mqttClient0 = MQTTClient(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
         User.mqttClient1 = MQTTClient(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
-        wake_up_MQTT(User.mqttClient0);
-        wake_up_MQTT(User.mqttClient1);
+        wake_up_MQTT(User.mqttClient0)
+        wake_up_MQTT(User.mqttClient1)
         User.mqttClient0.publish(LCD_FEED, json.dumps({"id": "3", "name": "LCD", "data": "HI! IOTDUDES", "unit": ""}))
         return jsonify({"status": "true"}), 200
 
@@ -217,74 +193,3 @@ class User:
                                msg="User {} unsubscribe feed {} ".format(session['user']['username'], feed_id))
             return jsonify({"status": "true", "msg": "Feed {0} unsubscribed successfully".format(feed_id)}), 200
         return jsonify({"error": "Not authenticated"}), 400
-
-#----------------------------------------ROUTES------------------------------------------------
-from routes import *
-thread = None
-
-
-@app.route('/api/account/logs', methods=['GET'])
-def getLogs():
-    db.LOGS.find({})
-
-
-#----------------------------------------background------------------------------------------------
-@socketio.on('message')
-def handle_message(msg):
-    logger.info(msg)
-
-def background_thread(roomname):
-        while True:
-            socketio.emit('server-send-mqtt',"FUCK YOU",to=roomname)
-            time.sleep(3)
-
-@socketio.on('join')
-def on_join(data):
-    user = data["user"]
-    room = data["room"]
-    join_room(room)
-    global thread
-    if thread is None:
-        thread = Thread(target=background_thread, args=(room,))
-        thread.daemon = True
-        thread.start()
-    emit("server-send-mqtt", "FUCK YOU BITCH", room=room)
-
-
-@socketio.on('connect')
-def handle_connected_user():
-    logger.info("=======================================A user connected========================================")
-    global global_sids
-    currentSocketId = request.sid
-    logger.info(currentSocketId)
-    global_sids =currentSocketId
-    global thread
-    def background_thread():
-        while True:
-            socketio.emit('server-send-mqtt',json.loads(get_mqtt(feed_id=LED_FEED)),to=global_sids)
-            time.sleep(3)
-    if thread is None:
-        thread = Thread(target=background_thread)
-        thread.daemon = True
-        thread.start()
-
-
-
-@socketio.on('server-send-mqtt')
-def handle_server_send_mqtt(message):
-    global thread
-    if thread is None:
-        thread = socketio.start_background_task(target=background_thread)
-
-
-@socketio.on('disconnect')
-def handle_disconnected_user():
-    logger.info("=======================================A user DISCONNECTED========================================")
-
-if __name__=='__main__':
-    #[socketio.start_background_task(handle_mqtt("haha"), debug=True) for feed in all_feeds]
-    socketio.run(app,port = 413, debug=True)
-
-
-
-
