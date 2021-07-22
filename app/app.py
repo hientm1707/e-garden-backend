@@ -40,7 +40,6 @@ def disconnected(client):
 def message(client, feed_id, payload):
     print('Feed {0} received new value: {1}'.format(feed_id, payload))
     socketio.emit('server-send-mqtt', json.loads(payload))
-
     payloadDict = json.loads(payload)
     if feed_id == DHT11_FEED:
         temp, humid = payloadDict['data'].split('-')
@@ -49,11 +48,13 @@ def message(client, feed_id, payload):
             MESSAGE = 'Your garden is too hot!!!!\n\nPLEASE TAKE ACTION!!'
             [sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='Subject: {}\n\n{}'.format(SUBJECT, MESSAGE))
              for RECEIVER in RECEIVERS]
+            print(MESSAGE)
         if int(humid) <= global_ctx['humidity_rate']:
             SUBJECT = 'HUMIDITY WARNING!'
             MESSAGE = 'Your garden is too dry, it needs watering!!!!\n\nPLEASE TAKE ACTION!!'
             [sendEmail(SENDER_USERNAME, SENDER_PASSWORD, RECEIVER, msg='Subject: {}\n\n{}'.format(SUBJECT, MESSAGE))
              for RECEIVER in RECEIVERS]
+            print(MESSAGE)
     global global_data
     try:
         global_data[feed_id] += [payloadDict]  # json to dict
@@ -124,11 +125,9 @@ class User:
 
     def signout(self):
         if session:
-            session.clear()
             User.mqttClient0.disconnect()
             User.mqttClient1.disconnect()
-            User.mqttClient0 = None
-            User.mqttClient1 = None
+
         else:
             return jsonify({"error": "Not logged in"})
 
