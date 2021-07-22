@@ -1,38 +1,40 @@
-from app import User,app
+from app import *
+from app.model import User
 from Adafruit_IO import Client, RequestError
-from flask import make_response, jsonify, json, request
+from flask import make_response, jsonify, json, request,session
 from feeds import *
 from globalData import *
 from username_and_key import *
-@app.route('/', methods=['GET'])
+from app.main import main
+@main.route('/', methods=['GET'])
 def homepage():
     return '<p> ok </p>'
 
-@app.route('/api/account/register', methods=['POST'])
+@main.route('/api/account/register', methods=['POST'])
 def register():
     return User().signup()
 
-@app.route('/api/account/', methods=['POST'])
+@main.route('/api/account/', methods=['POST'])
 def login():
     return User().login()
 
-@app.route('/api/account/logout', methods=['POST'])
+@main.route('/api/account/logout', methods=['POST'])
 def logout():
     return User().signout()
 
-@app.route('/api/account/unsubscribe/<feed_id>', methods=['GET'])
+@main.route('/api/account/unsubscribe/<feed_id>', methods=['GET'])
 def unsubscribe(feed_id):
     return User.unsubscribeFeed(feed_id)
 
-@app.route('/api/account/<feed_id>', methods=['POST'])
+@main.route('/api/account/<feed_id>', methods=['POST'])
 def publishToFeed(feed_id):
     return User.publishToFeed(feed_id)
 
-@app.route('/api/account/subscribe/<feed_id>', methods=['GET'])
+@main.route('/api/account/subscribe/<feed_id>', methods=['GET'])
 def subscribe(feed_id):
     return User.subscribeFeed(feed_id)
 
-@app.route('/api/account/<feed_id>/data', methods=['GET'])
+@main.route('/api/account/<feed_id>/data', methods=['GET'])
 def getDataOfTopic(feed_id):
     restClient = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0) if feed_id in feeds_of_client[0] else Client(ADAFRUIT_IO_USERNAME1,ADAFRUIT_IO_KEYBBC1)
     try:
@@ -47,16 +49,23 @@ def getDataOfTopic(feed_id):
         response.headers["Content-Type"] = "application/json"
         del restClient
         return response
-    data = json.loads(restClient.receive(feed.key)[3])['data']
-    if feed.key != DHT11_FEED:
-        del restClient
-        return jsonify({"status": "true", "value": data}), 200
+    #data = restClient.receive(feed.key)[3]
+    listData= restClient.data(feed_id)
+    if listData:
+        realData = json.loads(listData[0][3])['data']
+        print("======================================YES WE GOT SOME DATA===========================================")
+        if feed.key != DHT11_FEED:
+            del restClient
+            return jsonify({"status": "true", "value": realData}), 200
+        else:
+            temp,humid = realData.split('-')
+            del restClient
+            return jsonify({"status":"true", "value":{"temp":temp,"humid":humid}}),200
     else:
-        temp,humid = data.split('-')
-        del restClient
-        return jsonify({"status":"true", "value":{"temp":temp,"humid":humid}}),200
+        print("======================================NO DATA AVAILABLE===========================================")
+        return jsonify({"status": "false", "msg": "No feed available at the moment on this feed"}), 200
 
-@app.route('/api/account/<feed_id>/seven_data', methods=['GET'])
+@main.route('/api/account/<feed_id>/seven_data', methods=['GET'])
 def getSevenNearestValue(feed_id):
     dict_data = []
     client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
@@ -113,20 +122,28 @@ def getSevenNearestValue(feed_id):
         del client1
         return jsonify(return_value),400
 
-@app.route('/api/account/data', methods=['GET'])
+@main.route('/api/account/data', methods=['GET'])
 def getAllSensorsLatestData():
     dict_data = []
     client1 = Client(ADAFRUIT_IO_USERNAME1, ADAFRUIT_IO_KEYBBC1)
     client0 = Client(ADAFRUIT_IO_USERNAME0, ADAFRUIT_IO_KEYBBC0)
     for feed in feeds_of_client[1]:
-        data = client1.receive(feed)[3]
-        dict_data += [{
-            "id": feed,
-            "value": json.loads(data)['data'] if data is not None else None
-        }]
+        data = client1.data(feed)[0][3]
+        if data is not None:
+            dict_data += [{
+                "id": feed,
+                "value":json.loads(data)['data']
+            }]
+        else:
+            dict_data += [{
+                "id": feed,
+                "value": "None"
+            }]
+        print(dict_data)
     for feed in feeds_of_client[0]:
-        data = client0.receive(feed)[3]
-        value = json.loads(data)['data'] if data is not None else None
+        print(feed)
+        data = client0.data(feed)[0][3]
+        value = json.loads(data)['data'] if data is not None else "None"
         if feed == 'bk-iot-temp-humid':
             if value:
                 temp, humid = value.split('-')
@@ -135,11 +152,9 @@ def getAllSensorsLatestData():
             "id": feed,
             "value": value
         }]
-    del client0
-    del client1
     return jsonify({"data": dict_data, "status": "true"}), 200
 
-@app.route('/api/account/humidity_warning', methods=['GET', 'PUT'])
+@main.route('/api/account/humidity_warning', methods=['GET', 'PUT'])
 def modifyHumidityRate():
     if request.method == 'PUT':
         value = request.get_json()['value']
@@ -152,7 +167,7 @@ def modifyHumidityRate():
     else:
         return jsonify({"rate": global_ctx['humidity_rate'], "status": "true"}), 200
 
-@app.route('/api/account/temp_warning', methods=['GET', 'PUT'])
+@main.route('/api/account/temp_warning', methods=['GET', 'PUT'])
 def modifyTempRate():
     if request.method == 'PUT':
         value = request.get_json()['value']
@@ -164,3 +179,13 @@ def modifyTempRate():
         return jsonify({"error": "Invalid input format"}), 400
     else:
         return jsonify({"rate": global_ctx['temp_rate'], "status": "true"}), 200
+
+@main.route('/api/account/logs', methods=['GET'])
+def getLogs():
+    listOfLogs = list(db.LOGS.find({},{"_id":0}))
+    if listOfLogs:
+        return jsonify({
+            "status": "true",
+            "logs": listOfLogs
+        }), 200
+    return jsonify({"status": "false","msg":"No logs yet"}),200
