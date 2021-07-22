@@ -1,4 +1,4 @@
-from app import User,app
+from app import *
 from Adafruit_IO import Client, RequestError
 from flask import make_response, jsonify, json, request
 from feeds import *
