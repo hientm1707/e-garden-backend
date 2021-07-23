@@ -6,13 +6,14 @@ from passlib.hash import pbkdf2_sha256
 import uuid
 import sys
 from app.globalData import *
+from datetime import datetime
+from app.feeds import *
 
-from feeds import *
-
-def writeLogToDatabase(username,msg):
+def writeLogToDatabase(username, msg, time):
+    time_msg = time.strftime(" at %H:%M:%S on %d/%m/%Y")
     response ={
         "user" :username,
-        "action": msg
+        "action": msg + time_msg
     }
     db.LOGS.insert_one(response)
 
@@ -101,14 +102,16 @@ class User:
             return jsonify({"error": "Username already in use"}), 400
 
         if db.User.insert_one(user):
-            writeLogToDatabase(username=user['username'],msg="User {} registered, can now use system".format(user['username']))
+            writeLogToDatabase(username=user['username'],msg="User {} registered".format(user['username']), time = datetime.now())
             return self.start_session(user)
         return jsonify({"error": "Signup failed"}), 400
     def signout(self):
         if session:
             User.mqttClient0.disconnect()
             User.mqttClient1.disconnect()
-            writeLogToDatabase(username=session['user']['username'], msg="User {} logged out".format(session['user']['username']))
+            writeLogToDatabase(username=session['user']['username'], 
+                                msg="User {} logged out".format(session['user']['username']), 
+                                time = datetime.now())
         else:
             return jsonify({"error": "Not logged in"})
 
@@ -119,7 +122,9 @@ class User:
             "username": request.get_json()['username']
         })
         if user and pbkdf2_sha256.verify(request.get_json()['password'], user['password']):
-            writeLogToDatabase(username=user['username'], msg="User {} logged in".format(user['username']))
+            writeLogToDatabase(username=user['username'], 
+                                msg="User {} logged in".format(user['username']),
+                                time = datetime.now())
             return self.start_session(user)
 
         return jsonify({"error": "Invalid Username or password"}), 400
@@ -141,12 +146,11 @@ class User:
                     data_for_LED['data']= str(value)
                     dataToPublish = data_for_LED
                     if dataToPublish == "0":
-                        writeLogToDatabase(username=session['user']['username'], msg="User {} turned off LED".format(session['user']['username']))
+                        writeLogToDatabase(username=session['user']['username'], msg="User {} turned off LED".format(session['user']['username']), time = datetime.now())
                     elif dataToPublish=="1":
-                        writeLogToDatabase(username=session['user']['username'], msg="User {} switch LED to color RED ".format(session['user']['username']))
+                        writeLogToDatabase(username=session['user']['username'], msg="User {} switch LED to color RED".format(session['user']['username']), time = datetime.now())
                     else:
-                        writeLogToDatabase(username=session['user']['username'],
-                                           msg="User {} switch LED to color BLUE ".format(session['user']['username']))
+                        writeLogToDatabase(username=session['user']['username'], msg="User {} switch LED to color BLUE".format(session['user']['username']), time = datetime.now())
             elif feed_id == LCD_FEED:
                 if (not isinstance(value,str)) or (len(value) > 12):
                     return jsonify({"error": "Invalid input"}), 400
@@ -154,7 +158,8 @@ class User:
                     data_for_LCD['data'] = value
                     dataToPublish = data_for_LCD
                     writeLogToDatabase(username=session['user']['username'],
-                                       msg="User {} write to LCD value\"{}\" in".format(session['user']['username'],dataToPublish))
+                                       msg="User {} write to LCD value\"{}\"".format(session['user']['username'],dataToPublish),
+                                       time = datetime.now())
             else: #Relay:
                 if (not isinstance(value,int)) or (value not in range(2)):
                     return jsonify({"error": "Invalid input"}), 400
@@ -162,9 +167,9 @@ class User:
                     data_for_RELAY['data'] = str(value)
                     dataToPublish = data_for_LCD
                     if dataToPublish == "0":
-                        writeLogToDatabase(username=session['user']['username'], msg="User {} turned off RELAY".format(session['user']['username']))
+                        writeLogToDatabase(username=session['user']['username'], msg="User {} turned off RELAY".format(session['user']['username']), time = datetime.now())
                     else:
-                        writeLogToDatabase(username=session['user']['username'], msg="User {} turned on RELAY ".format(session['user']['username']))
+                        writeLogToDatabase(username=session['user']['username'], msg="User {} turned on RELAY ".format(session['user']['username']), time = datetime.now())
 
             if feed_id in feeds_of_client[0]:
                 User.mqttClient0.publish(feed_id, json.dumps(dataToPublish))
@@ -180,7 +185,8 @@ class User:
             realClient = User.mqttClient0 if feed_id in feeds_of_client[0] else User.mqttClient1
             realClient.subscribe(feed_id)
             writeLogToDatabase(username=session['user']['username'],
-                               msg="User {} subscribe feed {} ".format(session['user']['username'],feed_id))
+                               msg="User {} subscribe feed {} ".format(session['user']['username'],feed_id),
+                               time = datetime.now())
             return jsonify({"status": "true", "msg": "Feed {0} subscribed successfully".format(feed_id)}), 200
         return jsonify({"error": "Not authenticated"}), 400
 
@@ -190,6 +196,7 @@ class User:
             realClient = User.mqttClient0 if feed_id in feeds_of_client[0] else User.mqttClient1
             realClient.unsubscribe(feed_id)
             writeLogToDatabase(username=session['user']['username'],
-                               msg="User {} unsubscribe feed {} ".format(session['user']['username'], feed_id))
+                               msg="User {} unsubscribe feed {} ".format(session['user']['username'], feed_id),
+                               time = datetime.now())
             return jsonify({"status": "true", "msg": "Feed {0} unsubscribed successfully".format(feed_id)}), 200
         return jsonify({"error": "Not authenticated"}), 400
