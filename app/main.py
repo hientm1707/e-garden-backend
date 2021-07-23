@@ -11,7 +11,7 @@ socketio = SocketIO(main, cors_allowed_origins="*", engineio_logger=True, logger
 from threading import Thread
 
 #----------------------------------------ROUTES------------------------------------------------
-from routes import *
+from app.routes import *
 thread = None
 #----------------------------------------background------------------------------------------------
 @socketio.on('message')
