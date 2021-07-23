@@ -2,9 +2,9 @@ from app import *
 from app.model import User
 from Adafruit_IO import Client, RequestError
 from flask import make_response, jsonify, json, request,session
-from feeds import *
-from globalData import *
-from username_and_key import *
+from app.feeds import *
+from app.globalData import *
+from app.username_and_key import *
 from app.main import main
 @main.route('/', methods=['GET'])
 def homepage():
