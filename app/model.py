@@ -6,10 +6,11 @@ from passlib.hash import pbkdf2_sha256
 import uuid
 import sys
 from app.globalData import *
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.feeds import *
 
 def writeLogToDatabase(username, msg, time):
+    time += timedelta(hours=7)
     time_msg = time.strftime(" at %H:%M:%S on %d/%m/%Y")
     response ={
         "user" :username,
