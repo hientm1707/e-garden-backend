@@ -8,6 +8,7 @@ from app.username_and_key import *
 from app.main import main
 @main.route('/', methods=['GET'])
 def homepage():
+    db.LOGS.delete_many({})
     return '<p> ok </p>'
 
 @main.route('/api/account/register', methods=['POST'])
