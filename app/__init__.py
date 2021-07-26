@@ -1,8 +1,8 @@
 
-from feeds import *
+from app.feeds import *
 from pymongo import MongoClient
-from smtp import *
-from username_and_key import *
+from app.smtp import *
+from app.username_and_key import *
 import yaml
 with open("config/db.yaml", "r") as ymlfile:
     configuration = yaml.load(ymlfile, Loader=yaml.FullLoader)
