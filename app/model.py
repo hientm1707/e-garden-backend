@@ -165,7 +165,7 @@ class User:
                     return jsonify({"error": "Invalid input"}), 400
                 else:
                     data_for_RELAY['data'] = str(value)
-                    dataToPublish = data_for_LCD
+                    dataToPublish = data_for_RELAY
                     if dataToPublish == "0":
                         writeLogToDatabase(username=session['user']['username'], msg="User {} turned off RELAY".format(session['user']['username']), time = datetime.now())
                     else:
