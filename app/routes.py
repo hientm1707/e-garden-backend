@@ -6,6 +6,7 @@ from app.feeds import *
 from app.globalData import *
 from app.username_and_key import *
 from app.main import main
+from datetime import datetime, timedelta
 @main.route('/', methods=['GET'])
 def homepage():
     db.LOGS.delete_many({})
@@ -79,8 +80,9 @@ def getSevenNearestValue(feed_id):
                     value = json.loads(i[3])['data']
                 except TypeError: # if value == int not json
                     value = i[3]
+                time_ = datetime.strptime(i.created_at, '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=7)
                 dict_data += [{
-                    "created_at": i.created_at,
+                    "created_at": datetime.strftime(time_, '%Y-%m-%dT%H:%M:%SZ' ),
                     "value": value
                 }]
             return_value = {"data": dict_data, "status":"true"}
@@ -104,8 +106,9 @@ def getSevenNearestValue(feed_id):
                 if feed_id == 'bk-iot-temp-humid':
                     temp,humid = value.split('-')
                     value = { 'temp':temp, 'humid':humid}
+                time_ = datetime.strptime(i.created_at, '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=7)
                 dict_data += [{
-                    "created_at": i.created_at,
+                    "created_at": datetime.strftime(time_, '%Y-%m-%dT%H:%M:%SZ' ),
                     "value": value
                 }]
             return_value = {"data": dict_data, "status":"true"}

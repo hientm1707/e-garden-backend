@@ -6,10 +6,11 @@ from passlib.hash import pbkdf2_sha256
 import uuid
 import sys
 from app.globalData import *
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.feeds import *
 
 def writeLogToDatabase(username, msg, time):
+    time += timedelta(hours=7)
     time_msg = time.strftime(" at %H:%M:%S on %d/%m/%Y")
     response ={
         "user" :username,
@@ -145,9 +146,9 @@ class User:
                 else:
                     data_for_LED['data']= str(value)
                     dataToPublish = data_for_LED
-                    if dataToPublish == "0":
+                    if value == 0:
                         writeLogToDatabase(username=session['user']['username'], msg="User {} turned off LED".format(session['user']['username']), time = datetime.now())
-                    elif dataToPublish=="1":
+                    elif value == 1:
                         writeLogToDatabase(username=session['user']['username'], msg="User {} switched LED to color RED".format(session['user']['username']), time = datetime.now())
                     else:
                         writeLogToDatabase(username=session['user']['username'], msg="User {} switched LED to color BLUE".format(session['user']['username']), time = datetime.now())
@@ -166,7 +167,7 @@ class User:
                 else:
                     data_for_RELAY['data'] = str(value)
                     dataToPublish = data_for_RELAY
-                    if dataToPublish == "0":
+                    if value == 0:
                         writeLogToDatabase(username=session['user']['username'], msg="User {} turned off RELAY".format(session['user']['username']), time = datetime.now())
                     else:
                         writeLogToDatabase(username=session['user']['username'], msg="User {} turned on RELAY ".format(session['user']['username']), time = datetime.now())
