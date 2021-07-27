@@ -149,9 +149,9 @@ class User:
                     if value == 0:
                         writeLogToDatabase(username=session['user']['username'], msg="User {} turned off LED".format(session['user']['username']), time = datetime.now())
                     elif value == 1:
-                        writeLogToDatabase(username=session['user']['username'], msg="User {} switch LED to color RED".format(session['user']['username']), time = datetime.now())
+                        writeLogToDatabase(username=session['user']['username'], msg="User {} switched LED to color RED".format(session['user']['username']), time = datetime.now())
                     else:
-                        writeLogToDatabase(username=session['user']['username'], msg="User {} switch LED to color BLUE".format(session['user']['username']), time = datetime.now())
+                        writeLogToDatabase(username=session['user']['username'], msg="User {} switched LED to color BLUE".format(session['user']['username']), time = datetime.now())
             elif feed_id == LCD_FEED:
                 if (not isinstance(value,str)) or (len(value) > 12):
                     return jsonify({"error": "Invalid input"}), 400
@@ -159,7 +159,7 @@ class User:
                     data_for_LCD['data'] = value
                     dataToPublish = data_for_LCD
                     writeLogToDatabase(username=session['user']['username'],
-                                       msg="User {} write to LCD value\"{}\"".format(session['user']['username'],dataToPublish),
+                                       msg="User {} wrote to LCD value\"{}\"".format(session['user']['username'],value),
                                        time = datetime.now())
             else: #Relay:
                 if (not isinstance(value,int)) or (value not in range(2)):
