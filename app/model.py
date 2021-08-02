@@ -13,11 +13,17 @@ def writeLogToDatabase(username, msg, time):
     time += timedelta(hours=7)
     time_msg = time.strftime(" at %H:%M:%S on %d/%m/%Y")
     response ={
-        "user" :username,
         "action": msg + time_msg
     }
     db.LOGS.insert_one(response)
 
+def writeLog(msg,time):
+    time += timedelta(hours=7)
+    time_msg = time.strftime(" at %H:%M:%S on %d/%m/%Y")
+    response = {
+        "action": msg + time_msg
+    }
+    db.LOGS.insert_one(response)
 def connected(client):
     [client.subscribe(x) for x in feeds_of_client[0]] if client is User.mqttClient0 else [client.subscribe(x) for x in feeds_of_client[1]]
 
@@ -26,7 +32,10 @@ def disconnected(client):
     sys.exit(1)
 
 def message(client, feed_id, payload):
-    print('Feed {0} received new value: {1}'.format(feed_id, payload))
+    msg = 'Feed {0} received new value: {1}'.format(feed_id, payload);
+    print(msg)
+    msgToLog = msg + json.loads(payload)['data']
+    writeLog(msg=msgToLog,time = datetime.now())
     payloadDict = json.loads(payload)
     if feed_id == DHT11_FEED:
         temp, humid = payloadDict['data'].split('-')
