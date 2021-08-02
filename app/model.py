@@ -12,7 +12,9 @@ from app.feeds import *
 def writeLogToDatabase(username, msg, time):
     time += timedelta(hours=7)
     time_msg = time.strftime(" at %H:%M:%S on %d/%m/%Y")
+    
     response ={
+        "user" :username,
         "action": msg + time_msg
     }
     db.LOGS.insert_one(response)
@@ -20,7 +22,8 @@ def writeLogToDatabase(username, msg, time):
 def writeLog(msg,time):
     time += timedelta(hours=7)
     time_msg = time.strftime(" at %H:%M:%S on %d/%m/%Y")
-    response = {
+    response ={
+        "user" :username,
         "action": msg + time_msg
     }
     db.LOGS.insert_one(response)
