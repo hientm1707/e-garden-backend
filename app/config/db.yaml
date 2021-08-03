@@ -10,5 +10,4 @@
 mongoRemote: 'mongodb+srv://minhhien37:minhhien37@sandbox.wfgv5.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
 sender_username: 'theiotdudes@gmail.com'
 sender_password: 'doandanganh2021'
-receivers:  ['minhhien1772000@gmail.com', 'minhtri.tk23@gmail.com']
-
+receivers:  ['minhhien1772000@gmail.com', 'minhtri.tk23@gmail.com', 'giahuy061200@gmail.com']
