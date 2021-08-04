@@ -6,7 +6,7 @@ def sendEmail(sender_username, sender_password, receiver,msg):
             smtp.starttls(context=context)
             smtp.login(sender_username, sender_password)
             smtp.sendmail(sender_username, receiver, msg)
-            print('Successfully sent email to{}'.format(receiver))
+            print('Successfully sent email to {}'.format(receiver))
             smtp.quit()
         except Exception as e:
             print('Could not send email!!!')
