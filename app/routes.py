@@ -187,9 +187,7 @@ def modifyTempRate():
 @main.route('/api/account/logs', methods=['GET'])
 def getLogs():
     listOfLogs = list(db.LOGS.find({},{"_id":0}))
-    if listOfLogs:
-        return jsonify({
+    return jsonify({
             "status": "true",
             "logs": listOfLogs
         }), 200
-    return jsonify({"status": "false","msg":"No logs yet"}),200
