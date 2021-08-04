@@ -135,8 +135,9 @@ class User:
         data_for_RELAY = {"id": "11", "name": "RELAY", "data": "X", "unit": ""}
         data_for_LED = {"id": "1", "name": "LED", "data": "X", "unit": ""}
         data_for_LCD = {"id": "3", "name": "LCD", "data": "X", "unit": ""}
-        if feed_id not in feed_pub:
-            return jsonify({"error": "You cannot publish to this feed"}), 400
+
+        # if feed_id  in feed_pub:
+            # return jsonify({"error": "You cannot publish to this feed"}), 400
         dataToPublish = None
         if 'logged_in' in session and session['logged_in'] is True:
             value = request.get_json()['value']
@@ -160,7 +161,35 @@ class User:
                     dataToPublish = data_for_LCD
                     writeLogToDatabase(username=session['user']['username'],
                                        msg="User {} wrote to LCD value\"{}\"".format(session['user']['username'],value),
-                                       time = datetime.now())
+                                       time = datetime.now())   
+            elif feed_id in feed_sub: # FEED SUB : SOIL, LIGHT, TEMPHUMID   
+                topic_index = {'bk-iot-soil': "9", "bk-iot-light": "13", 'bk-iot-temp-humid': "7"}  
+                if 'temp' in feed_id:
+                    try:
+                        temp,humid = value.split('-')
+                    except ValueError: # ko co '-'
+                        return jsonify({"error": "Invalid input"}), 400
+                    except  AttributeError: # type is int
+                        return jsonify({"error": "Invalid input"}), 400
+                    try :
+                        temp, humid = int(temp), int(humid)
+                    except ValueError: # cant convert to int
+                        return jsonify({"error": "Invalid input"}), 400
+                else: # soil, light
+                    try :
+                        new = int(value)
+                    except ValueError: # cant convert to int
+                        return jsonify({"error": "Invalid input"}), 400
+                    if new not in range(0,1024):
+                        return jsonify({"error": "Invalid input"}), 400
+
+                dataToPublish = {
+                    "id" : topic_index[feed_id],
+                    "name" : feed_id[7:].upper(),
+                    "data" : str(value), # str for light,soil
+                    "unit" : "*C-%" if 'temp' in feed_id else ""
+                }
+
             else: #Relay:
                 if (not isinstance(value,int)) or (value not in range(2)):
                     return jsonify({"error": "Invalid input"}), 400
