@@ -135,8 +135,13 @@ class User:
         data_for_RELAY = {"id": "11", "name": "RELAY", "data": "X", "unit": ""}
         data_for_LED = {"id": "1", "name": "LED", "data": "X", "unit": ""}
         data_for_LCD = {"id": "3", "name": "LCD", "data": "X", "unit": ""}
-        if feed_id not in feed_pub:
+        data_for_SOIL = {"id": "9", "name": "SOIL", "data": "X", "unit": ""}
+        data_for_LIGHT = {"id": "13", "name": "LIGHT", "data": "X", "unit": ""}
+        data_for_TEMPHUMID = {"id": "7", "name": "TEMP-HUMID", "data": "X", "unit": "C-%"}
+
+        if feed_id not in all_feeds:
             return jsonify({"error": "You cannot publish to this feed"}), 400
+
         dataToPublish = None
         if 'logged_in' in session and session['logged_in'] is True:
             value = request.get_json()['value']
@@ -160,7 +165,41 @@ class User:
                     dataToPublish = data_for_LCD
                     writeLogToDatabase(username=session['user']['username'],
                                        msg="User {} wrote to LCD value\"{}\"".format(session['user']['username'],value),
-                                       time = datetime.now())
+                                       time = datetime.now())  
+            elif feed_id == SOIL_FEED:
+                try :
+                    new_value = int(value)
+                except ValueError: # cant convert to int
+                    return jsonify({"error": "Invalid input"}), 400
+                if new_value not in range(0,1024):
+                    return jsonify({"error": "Invalid input"}), 400
+                data_for_SOIL['data'] = str(value)
+                dataToPublish = data_for_SOIL
+
+            elif feed_id == LIGHT_FEED:
+                try :
+                    new_value = int(value)
+                except ValueError: # cant convert to int
+                    return jsonify({"error": "Invalid input"}), 400
+                if new_value not in range(0,1024):
+                    return jsonify({"error": "Invalid input"}), 400
+                data_for_LIGHT['data'] = str(value)
+                dataToPublish = data_for_LIGHT
+
+            elif feed_id == DHT11_FEED:
+                try:
+                    temp, humid = value.split('-')
+                except ValueError: # ko co '-'
+                    return jsonify({"error": "Invalid input"}), 400
+                except  AttributeError: # type of value is int
+                    return jsonify({"error": "Invalid input"}), 400
+                try :
+                    temp, humid = int(temp), int(humid)
+                except ValueError: # cant convert to int
+                    return jsonify({"error": "Invalid input"}), 400
+                data_for_TEMPHUMID['data'] = value
+                dataToPublish = data_for_TEMPHUMID
+    
             else: #Relay:
                 if (not isinstance(value,int)) or (value not in range(2)):
                     return jsonify({"error": "Invalid input"}), 400
