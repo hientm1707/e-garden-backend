@@ -1,4 +1,4 @@
-Adafruit_IO==2.5.0
+ Adafruit_IO==2.5.0
 passlib==1.7.4
 pymongo==3.11.4
 adafruit_bme280==1.0.1
@@ -16,3 +16,6 @@ flask_login==0.5.0
 paho_mqtt==1.5.1
 PyYAML==5.4.1
 gunicorn==19.9.0
+dnspython==1.16.0
+logger==1.4
+eventlet==0.30.2
