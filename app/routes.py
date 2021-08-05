@@ -9,9 +9,11 @@ from app.main import main
 from datetime import datetime, timedelta
 @main.route('/', methods=['GET'])
 def homepage():
-    db.LOGS.delete_many({})
     return '<p> ok </p>'
-
+@main.route('/delLogs', methods = ['GET'])
+def delLogs():
+    db.LOGS.delete_many({})
+    return 'Deleted all logs'
 @main.route('/api/account/register', methods=['POST'])
 def register():
     return User().signup()
