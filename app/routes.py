@@ -1,5 +1,5 @@
 from app import *
-from app.model import User
+from app.model import User, writeLogToDatabase
 from Adafruit_IO import Client, RequestError
 from flask import make_response, jsonify, json, request,session
 from app.feeds import *
@@ -166,6 +166,8 @@ def modifyHumidityRate():
             return jsonify({"status": "false", "msg": "Invalid body format"}), 400
         if isinstance(value, int):
             global_ctx['humidity_rate'] = value
+            user_name = session['user']['username']
+            writeLogToDatabase(username=user_name, msg=f"User {user_name} set humidity warning rate to {value}", time=datetime.now() )
             return jsonify({"status": "true"}), 200
         return jsonify({"error": "Invalid input format"}), 400
     else:
@@ -179,6 +181,8 @@ def modifyTempRate():
             return jsonify({"status": "false", "msg": "Invalid body format"}), 400
         if isinstance(value, int):
             global_ctx['temp_rate'] = value
+            user_name = session['user']['username']
+            writeLogToDatabase(username=user_name, msg=f"User {user_name} set temperature warning rate to {value}", time=datetime.now() )
             return jsonify({"status": "true"}), 200
         return jsonify({"error": "Invalid input format"}), 400
     else:
